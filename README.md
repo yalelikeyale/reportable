@@ -2,7 +2,7 @@
 
 **To use python better, get started and look at the usage guidlines for each module down below.**
 
-For more information see our [WIKI](https://github.com/adamrdavid/adams_python_tools/wiki)
+For more information see our [WIKI](https://github.com/adamrdavid/python-tools/wiki)
 
 Getting Started
 ===============
