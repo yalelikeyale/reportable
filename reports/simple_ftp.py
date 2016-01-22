@@ -5,22 +5,13 @@ import pysftp
 import MySQLdb
 import subprocess as sp
 from ftplib import FTP
+from config import ftp_creds
 
 # constants
-wiser_host = "ftp.wiser.com"
-wiser_port = 21
-wiser_user = os.environ['FTP_USER']
-wiser_pass = os.environ['FTP_PASS']
-# cmd line variables
-job_type = sys.argv[1]
-connection_type = sys.argv[2]
-user_name = sys.argv[3]
-ftp_host = sys.argv[4]
-ftp_port = sys.argv[5]
-ftp_user = sys.argv[6]
-ftp_pass = sys.argv[7]
-ftp_path = sys.argv[8]
-search_keyword = sys.argv[9]
+wiser_host = ftp_creds['host']
+wiser_port = ftp_creds['port']
+wiser_user = ftp_creds['user']
+wiser_pass = ftp_creds['password']
 
 # job_type = "export"
 # connection_type = "sftp - no key"
@@ -114,72 +105,3 @@ def sftp_drop(host, port, user, pwrd, path, filename):
 			print time.strftime("%c"), "sftp drop: %s" % remotepath
 			print "Success!"
 		sftp.close()
-
-
-### MAIN ###
-print "len", len(sys.argv)
-print sys.argv
-## import job
-if job_type == 'import':
-    grab_path = ftp_path
-    drop_path = "usersftp/LocalUser/%s/Upload" % user_name
-    if connection_type == 'sftp - no key':
-		filelist = sftp_grab(ftp_host, ftp_port, ftp_user, ftp_pass, grab_path, search_keyword)
-		for filename in filelist:
-			try:
-				ftp_drop(wiser_host, wiser_port, wiser_user, wiser_pass, drop_path, filename)
-			except Exception as e:
-				print time.strftime("%c"),"error:",e
-		print "Success: transfer complete!"
-    elif connection_type == 'sftp - with key':
-        print "ffs FUCK OFF now!"
-    elif connection_type == 'ftps':
-        print 'nopersnopitynope'
-    elif connection_type == 'ftp':
-		filelist = ftp_grab(ftp_host, ftp_port, ftp_user, ftp_pass, grab_path, search_keyword)
-		for filename in filelist:
-			try:
-				ftp_drop(wiser_host, wiser_port, wiser_user, wiser_pass, drop_path, filename)
-			except Exception as e:
-				print time.strftime("%c"),"error:",e
-			else:
-				output = 1
-				print "Success: transfer complete!"
-    else:
-		# should not get here, invalid connection type
-		print "ya done fucked up junior!"
-## export job
-elif job_type == 'export':
-	grab_path = "usersftp/LocalUser/%s/Download" % user_name
-	drop_path = ftp_path
-	if connection_type == "sftp - no key":
-		filelist = ftp_grab(wiser_host, wiser_port, wiser_user, wiser_pass, grab_path, search_keyword)
-		for filename in filelist:
-			try:
-				sftp_drop(ftp_host, ftp_port, ftp_user, ftp_pass, drop_path, filename)
-			except Exception as e:
-				print time.strftime("%c"),"error:",e
-		print "Success: transfer complete!"
-	elif connection_type == 'sftp - with key':
-		print "ffs FUCK OFF now!"
-	elif connection_type == 'ftps':
-		print 'nopersnopitynope'
-	elif connection_type == 'ftp':
-		filelist = ftp_grab(wiser_host, wiser_port, wiser_user, wiser_pass, grab_path, search_keyword)
-		for filename in filelist:
-			try:
-				ftp_drop(ftp_host, ftp_port, ftp_user, ftp_pass, drop_path, filename)
-			except Exception as e:
-				print time.strftime("%c"),"error:",e
-		print "Success: transfer complete!"
-	else:
-		# should not be possible, invalid connection type
-		print "ya done fucked up junior!"
-
-if filelist:
-	print "delesting old files:", filelist
-	for filename in filelist:
-		print time.strftime("%c"),"removing:",filename
-		os.remove(filename)
-print "All Done!"
-

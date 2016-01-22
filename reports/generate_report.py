@@ -70,7 +70,6 @@ def get_custom_column_data(store_id):
 		query = """SELECT prod.sku, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = {0})
 					FROM products as prod
 					where prod.store_id = {1}"""
-
 		data_list.append(pd.read_sql(query.format(column, store_id), db).set_index('sku'))
 	custom_column_data = pd.concat(data_list, axis=1)
 	return custom_column_data
