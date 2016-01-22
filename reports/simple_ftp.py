@@ -98,7 +98,7 @@ def sftp_drop(host, port, user, pwrd, path, filename):
 		print "lock released"
 		# upload file to remotepath
 		try:
-			sftp.put("./"+filename,remotepath)
+			sftp.put(filename,remotepath)
 		except Exception as e:
 			print e
 		else:
