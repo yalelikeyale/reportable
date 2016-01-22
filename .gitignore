@@ -1,0 +1,16 @@
+
+# Ignore sensetive data
+**/config.py
+config.py
+*/*results*
+
+# Ignore compiled files
+*.pyc
+*/*.pyc
+
+build/
+dist/
+python_tools.egg-info/
+
+.DS_Store
+*/.DS_Store
