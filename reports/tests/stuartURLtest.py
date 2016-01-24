@@ -8,16 +8,18 @@ import subprocess as sp
 from ftplib import FTP
 from email import Encoders
 from reports import fun_url
+from reports import config
+mysqlcon = config.mysqlcon
 
 
 stores = [['1162553715', 'USA']] #, ['1163016056', 'UK'], ['1170967056','Italy'], ['1170967153','Germany']]
 
 OUT_FILEPATH = "mapReport_%s_%s.xlsx"
 DROP_PATH = "/Download/"
-MYSQL_HOST = 'db04.wiser.com'
-MYSQL_PORT = 3306
-MYSQL_USER = os.environ['MYSQL_USER'] 
-MYSQL_PASS = os.environ['MYSQL_PASS']
+MYSQL_HOST = mysqlcon['host']
+MYSQL_PORT = mysqlcon['port']
+MYSQL_USER = mysqlcon['username']
+MYSQL_PASS = mysqlcon['password']
 MYSQL_DB = 'wp_data_prod'
 
 
@@ -51,7 +53,7 @@ def create_report(store, filename):
           WHERE cs.enabled = 1 AND gs.action LIKE "insert" AND pricing_ne.price < pps.store_price AND pps.store_id = {1}
           GROUP BY prod.upc, stores.id)
           ORDER BY "Product Name", "Material", "Color", "Retailer";"""
-#% (str(store), str(store))
+
   store = str(store)
   print store
   qry = qry.format(store,store)
@@ -74,8 +76,6 @@ def create_report(store, filename):
   resellers.to_excel(writer, sheet_name="Resellers", index=False)
   resultdata.to_excel(writer, sheet_name='DataSet', index=False)
   pt = pd.pivot_table(resultdata, index=["Product Name", "Material", "Color", "Retailer", "Retailer Price"])
-  # pt = pt.reset_index()
-  # pt.sort(['Product Name', 'Material', 'Color', 'Retailer'], inplace=True)
   pt.to_excel(writer, sheet_name='PivotTable')
   writer.save()
   print "export " + time.strftime('%F')
@@ -112,25 +112,6 @@ def send_email(filenames):
   msg["Subject"] = "WiseReport - MAP Policy Updated Violators"
   msg.preamble = "WiseReport - MAP Policy Updated Violators"
 
-  # ctype, encoding = mimetypes.guess_type(fileToSend)
-  # if ctype is None or encoding is not None:
-  #     ctype = "application/octet-stream"
-
-  # maintype, subtype = ctype.split("/", 1)
-
-  # if maintype == "text":
-  #     fp = open(fileToSend)
-  #     # Note: we should handle calculating the charset
-  #     attachment = MIMEText(fp.read(), _subtype=subtype)
-  #     fp.close()
-  # else:
-  #     fp = open(fileToSend, "rb")
-  #     attachment = MIMEBase(maintype, subtype)
-  #     attachment.set_payload(fp.read())
-  #     fp.close()
-  #     encoders.encode_base64(attachment)
-  # attachment.add_header("Content-Disposition", "attachment", filename=fileToSend)
-  # msg.attach(attachment)
   print "attaching message..."
   server = smtplib.SMTP("smtp.gmail.com:587")
   server.starttls()
@@ -140,6 +121,8 @@ def send_email(filenames):
   print "sent message to %s" % emailrecip
   server.quit()
 
+
+## MAIN ##
 filenames = []
 for store in stores:
   filename = OUT_FILEPATH % (store[1], time.strftime('%F'))
