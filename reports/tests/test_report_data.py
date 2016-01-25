@@ -2,7 +2,8 @@ import os
 import reports
 import MySQLdb
 import pandas as pd
-from config import mysqlcon
+from reports import config
+mysqlcon = config.mysqlcon
 
 INPUT_FILE = "sid_uid.csv"
 

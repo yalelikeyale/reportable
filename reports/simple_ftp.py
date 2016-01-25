@@ -10,7 +10,7 @@ from config import ftp_creds
 # constants
 wiser_host = ftp_creds['host']
 wiser_port = ftp_creds['port']
-wiser_user = ftp_creds['user']
+wiser_user = ftp_creds['username']
 wiser_pass = ftp_creds['password']
 
 # job_type = "export"

@@ -14,7 +14,7 @@ import report_settings as rs
 import config
 
 ftp_creds = config.ftp_creds
-wiser_redshift_etl = config.wiser_redshift_etl
+wiser_redshift_etl = config.wiser_redshift
 
 # stores = ['579991', '1162612429']
 # user_id = '2595'
@@ -22,7 +22,7 @@ wiser_redshift_etl = config.wiser_redshift_etl
 # ftppath = ftp_creds['path'] % username
 # fileName = "wp_inv_%s.csv"
 
-db = psycopg2.connect(host=wiser_redshift_etl['host'], user=wiser_redshift_etl['user'], password=wiser_redshift_etl['password'], database=wiser_redshift_etl['database'], port=wiser_redshift_etl['port'], connect_timeout=5)
+db = psycopg2.connect(host=wiser_redshift_etl['host'], user=wiser_redshift_etl['username'], password=wiser_redshift_etl['password'], database=wiser_redshift_etl['database'], port=wiser_redshift_etl['port'], connect_timeout=5)
 
 def get_comp_settings(store_id, user_id):
 	'''Return the store settings related to competitor data'''

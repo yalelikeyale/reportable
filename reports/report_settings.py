@@ -8,8 +8,7 @@ import pandas.io.sql as psql
 from ftplib import FTP
 from datetime import date, datetime, time, timedelta
 from collections import OrderedDict
-
-import config
+from reports import config
 
 INPUT_FILE = "sid_uid.csv"
 
@@ -19,7 +18,7 @@ ftp_creds = config.ftp_creds
 ftp_host = ftp_creds['host']
 ftp_port = ftp_creds['port']
 ftp_path = ftp_creds['path']
-ftp_user = ftp_creds['user']
+ftp_user = ftp_creds['username']
 ftp_pass = ftp_creds['password']
 
 con = MySQLdb.connect(host=mysqlcon['host'] , port=mysqlcon['port'], user=mysqlcon['username'], 
@@ -36,7 +35,7 @@ def check_user_match(store_id, uid):
 def check_ftp_user(uid):
 	ftp = FTP()
 	ftp.connect(ftp_creds['host'], ftp_creds['port'])
-	ftp.login(ftp_creds['user'], ftp_creds['password'])
+	ftp.login(ftp_creds['username'], ftp_creds['password'])
 	print "logged in...checking user dir"
 	try:
 		ftp.cwd(ftp_creds['path'] % ("/User%s" % uid))
