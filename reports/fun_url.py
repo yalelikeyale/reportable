@@ -1,7 +1,9 @@
 import json
+import time
 import requests
 from config import shorturl_api_key
 
+rate_limit = 1
 max_length = 255
 
 def split_url(url):
@@ -35,9 +37,11 @@ def shorten_url(url):
   headers = {'content-type': 'application/json'}
   try:
     r = requests.post(post_url, data=json.dumps(payload), headers=headers)
+    #time.sleep(rate_limit)
   except Exception, e:
     print e
   else:
+    #print r.text
     url = str(json.loads(r.text)['id'])
   return url
 

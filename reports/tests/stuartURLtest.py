@@ -12,7 +12,7 @@ from reports import config
 mysqlcon = config.mysqlcon
 
 
-stores = [['1162553715', 'USA']] #, ['1163016056', 'UK'], ['1170967056','Italy'], ['1170967153','Germany']]
+stores = [['1162553715', 'USA'], ['1163016056', 'UK'], ['1170967056','Italy'], ['1170967153','Germany']]
 
 OUT_FILEPATH = "mapReport_%s_%s.xlsx"
 DROP_PATH = "/Download/"
@@ -80,7 +80,7 @@ def create_report(store, filename):
   writer.save()
   print "export " + time.strftime('%F')
 
-def send_email(filenames):
+def send_email(filenames, recip, bcc):
   import smtplib
   import mimetypes
   from email.mime.multipart import MIMEMultipart
@@ -101,12 +101,12 @@ def send_email(filenames):
     part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(f))
     msg.attach(part)
 
+  emailrecip = recip
+  emailto = ", ".join(emailrecip)
+  
   emailfrom = os.environ['UL_USER']
-  emailrecip = ["adam.david@wiser.com"] #["AZalka@stuartweitzman.com","JLelonek@stuartweitzman.com","AStarr@stuartweitzman.com","wkulkin@stuartweitzman.com"]
-  bcc = ["adam.david@wiser.com", "dean@wiser.com"]
   username = os.environ['UL_USER']
   password = os.environ['UL_PASS']
-  emailto = "adam.david@wiser.com"    # "AZalka@stuartweitzman.com, JLelonek@stuartweitzman.com, AStarr@stuartweitzman.com, wkulkin@stuartweitzman.com"
   msg["From"] = emailfrom
   msg["To"] = emailto
   msg["Subject"] = "WiseReport - MAP Policy Updated Violators"
@@ -123,10 +123,16 @@ def send_email(filenames):
 
 
 ## MAIN ##
-filenames = []
+bcc = ["adam.david@wiser.com", "dean@wiser.com"]
+filenamesUs = ["JLelonek@stuartweitzman.com","AStarr@stuartweitzman.com","wkulkin@stuartweitzman.com"]
+filenamesEu = ["AZalka@stuartweitzman.com","AStarr@stuartweitzman.com","wkulkin@stuartweitzman.com"]
 for store in stores:
   filename = OUT_FILEPATH % (store[1], time.strftime('%F'))
-  filenames.append(filename)
+  if store[1] == "USA":
+    filenamesUs.append(filename)
+  else:
+    filenamesEu.append(filename)
   create_report(int(store[0]), filename)
-send_email(filenames)
+send_email(filenamesUs, usrecip, bcc)
+send_email(filenamesEu, eurecip, bcc)
 sp.call("rm mapReport*", shell=True)
