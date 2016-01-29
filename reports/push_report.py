@@ -23,7 +23,7 @@ def has_duplicate(report_data):
     AND target_connection_string = "{2}"
     AND recurrence_in_minutes = {3}
     AND gmt_timezone = {4}
-    AND scheduled_at = "{5}"
+    AND (scheduled_at = "{5}" OR scheduled_at = DATE_ADD("{5}", INTERVAL 1 DAY))
     """
 
   try:
