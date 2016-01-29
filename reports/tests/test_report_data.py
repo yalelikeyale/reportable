@@ -3,6 +3,7 @@ import reports
 import MySQLdb
 import pandas as pd
 from reports import config
+from reports import push_report
 mysqlcon = config.mysqlcon
 
 INPUT_FILE = "sid_uid.csv"
@@ -33,6 +34,9 @@ for index, row in stores.iterrows():
   else:
     stores.loc[index, "result"] = "Success!"
     stores.loc[index, "report_data"] = str(report_data)
+    print "Has dup: ", push_report.has_duplicate(report_data)
+    # UNCOMMENT to actually push report to production
+    #push_report.create_row(report_data)
 print "printing results...."
 stores.to_csv("results_you_true.csv")
 print "Done!"
