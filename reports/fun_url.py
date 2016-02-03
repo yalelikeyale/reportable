@@ -1,5 +1,6 @@
 import json
 import time
+import urllib
 import requests
 from config import shorturl_api_key
 
@@ -7,6 +8,7 @@ rate_limit = 1
 max_length = 255
 
 def split_url(url):
+  # split remaining url if needed
   if "link.mercent.com" in url:
     if "3fcm_mmc" in url:
       try: 
@@ -29,6 +31,7 @@ def split_url(url):
       url = str(url).split('?currency')[0]
     except Exception, e:
       print e
+
   return url
 
 def shorten_url(url):
@@ -36,20 +39,32 @@ def shorten_url(url):
   payload = {'longUrl': url}
   headers = {'content-type': 'application/json'}
   try:
+    #url = urllib.quote(url)
     r = requests.post(post_url, data=json.dumps(payload), headers=headers)
     #time.sleep(rate_limit)
   except Exception, e:
     print e
   else:
     #print r.text
-    url = str(json.loads(r.text)['id'])
+    try:
+      url = str(json.loads(r.text)['id'])
+    except Exception, e:
+      print "Failed to shorten this url: ", url
+      print "Result from failed request: ", r.text
+      print "Exception: ", e
   return url
 
 
 def clean_url(url):
   url = split_url(url)
   if len(url) > max_length:
+    # try to grab redirect useing urllib
+    url = urllib.urlopen(str(url))
+    url = url.geturl()
+    print "url shortened with urllib: ", url
+  if len(url) > max_length:
     url = shorten_url(url)
+    print "url shortened with google api: ", url
   return url
 
 

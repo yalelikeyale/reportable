@@ -24,14 +24,15 @@ ftp_pass = ftp_creds['password']
 con = MySQLdb.connect(host=mysqlcon['host'] , port=mysqlcon['port'], user=mysqlcon['username'], 
 		              passwd=mysqlcon['password'], db=mysqlcon['database'] )
 
-def check_user_match(store_id, uid):
-	check_user_query = '''select count(*) as check_user
+# Returns user id of associated store
+def get_user(store_id):
+	get_user_query = '''select user_id
 		from stores
-		where id = %s and user_id = %s;'''
-	check_user_result = pd.read_sql(check_user_query % (store_id,uid), con = con)
-	check_user = check_user_result.loc[0]["check_user"]
-	return check_user
+		where id = %s;'''
+	user_id = pd.read_sql(get_user_query % (store_id), con = con).loc[0]["user_id"]
+	return user_id
 
+# Return true iff the user's ftp directory exists
 def check_ftp_user(uid):
 	ftp = FTP()
 	ftp.connect(ftp_creds['host'], ftp_creds['port'])
@@ -147,7 +148,8 @@ def get_custom_columns(store_id):
 	custom_attr_fields = OrderedDict(sorted(custom_attr_fields.items()))
 	return custom_attr_fields
 
-def get_prefs(store_id, uid):
+def get_prefs(store_id):
+	uid = get_user(store_id)
 	comp_url = 0
 	competitor_per_row = 0
 	max_comps = 5
@@ -223,26 +225,23 @@ def get_prefs(store_id, uid):
 	only_new_price = store_prefs[store_prefs["name"] == "FTP_EXPORT_ONLY_NEW_PRICE"]['val'].values[0]
 	only_valid_wiseprice = store_prefs[store_prefs["name"] == "FTP_EXPORT_ONLY_VALID_WISEPRICE"]['val'].values[0]
 
-	return {'comp_url': comp_url,'map_screenshots': map_screenshots, 'price_includes_shipping': price_includes_shipping, 'is_uom': is_uom, 'csv_delimiter': csv_delimiter, 'competitor_per_row': competitor_per_row, 'max_comps': max_comps, 'competitor_store_data_fields': competitor_store_data_fields, 'competitor_fields': competitor_fields, 'only_new_price': only_new_price, 'only_valid_wiseprice': only_valid_wiseprice}
+	return {'user_id': uid, 'comp_url': comp_url,'map_screenshots': map_screenshots, 'price_includes_shipping': price_includes_shipping, 'is_uom': is_uom, 'csv_delimiter': csv_delimiter, 'competitor_per_row': competitor_per_row, 'max_comps': max_comps, 'competitor_store_data_fields': competitor_store_data_fields, 'competitor_fields': competitor_fields, 'only_new_price': only_new_price, 'only_valid_wiseprice': only_valid_wiseprice}
 
 
 
-## generate report data based on prefs from store/uid
+## generate report data based on prefs from store
 
-def generate_report_data(store_id, uid, gmt_timezone, schedule_at, include_timestamp):
-	# validate input
-	check_user = check_user_match(store_id, uid)
-	if check_user != 1:
-		print "!!BAD INPUT!!"
-		return -1, "error: Bad Input: uid/sid don't match"
+def generate_report_data(store_id, gmt_timezone, schedule_at, include_timestamp):
+	# get user id
+	user_id = get_user(store_id)
 
 	print "Checking User's FTP Directory"
-	check_ftp = check_ftp_user(uid)
+	check_ftp = check_ftp_user(user_id)
 	print "Check FTP: ", check_ftp
 	if check_ftp is False:
 		print "Bad input - no ftp"
 		return -1, "error: Bad Input: User does not have ftp location"
-	connection_string = "ftp://%s:%s@ftp.wiser.com/usersftp/LocalUser/User%s/Download/wp_inv_%s.csv" % (ftp_user, ftp_pass, uid, store_id)
+	connection_string = "ftp://%s:%s@ftp.wiser.com/usersftp/LocalUser/User%s/Download/wp_inv_%s.csv" % (ftp_user, ftp_pass, user_id, store_id)
 	
 	# checking scheduled_at time
 	print "getting scheduled_at..."
@@ -264,7 +263,7 @@ def generate_report_data(store_id, uid, gmt_timezone, schedule_at, include_times
 
 	# get and parse prefs
 	print "parsing preferences..."
-	preferences = get_prefs(store_id, uid)
+	preferences = get_prefs(store_id)
   # map_screenshots, price_includes_shipping, is_uom, csv_delimiter, competitor_per_row, max_comps, competitor_store_data_fields, competitor_fields, only_new_price, only_valid_wiseprice
 
 	settings_json = json.dumps({

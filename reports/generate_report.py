@@ -24,9 +24,9 @@ wiser_redshift_etl = config.wiser_redshift
 
 db = psycopg2.connect(host=wiser_redshift_etl['host'], user=wiser_redshift_etl['username'], password=wiser_redshift_etl['password'], database=wiser_redshift_etl['database'], port=wiser_redshift_etl['port'], connect_timeout=5)
 
-def get_comp_settings(store_id, user_id):
+def get_comp_settings(store_id):
 	'''Return the store settings related to competitor data'''
-	prefs = rs.get_prefs(store_id, user_id)
+	prefs = rs.get_prefs(store_id)
 	try:
 		max_comps = max_comps
 	except Exception, e:
@@ -67,9 +67,9 @@ def get_custom_column_data(store_id):
 	custom_columns = rs.get_custom_columns(store_id)
 	data_list = []
 	for column in custom_columns:
-		query = """SELECT prod.sku, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = {0})
+		query = """SELECT prod.sku, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as {0}
 					FROM products as prod
-					where prod.store_id = "{1}" """
+					where prod.store_id = {1}"""
 		data_list.append(pd.read_sql(query.format(column, store_id), db).set_index('sku'))
 	custom_column_data = pd.concat(data_list, axis=1)
 	return custom_column_data
@@ -90,13 +90,13 @@ def get_competitor_data(store_id):
 	competitor_data = pd.read_sql(query % store_id, db)
 	return competitor_data
 
-def top_competitor_format(store_id, user_id):
+def top_competitor_format(store_id):
 	'''Transform competior data to rows unique by sku instead of (sku, competitor).
 	Competitor formats: (Comp1, Comp1 Price Includes Shiping, Comp1 URL, Comp2...)
 					    (Comp1, Comp1 Price, Comp1 Shiping, Comp1 URL, Comp2...)
 					    [URL optional]'''
 
-	comp_prefs = get_comp_settings(store_id, user_id)
+	comp_prefs = get_comp_settings(store_id)
 	max_comps = comp_prefs['max_comps']
 	comp_url = comp_prefs['comp_url']
 	price_w_ship = comp_prefs['price_w_ship']
@@ -179,7 +179,7 @@ def top_competitor_format(store_id, user_id):
 	return finalresult
 
 
-def top_competitor_report(store_id, user_id):
+def top_competitor_report(store_id):
 
 	prods = pd.concat([get_product_data(store_id).set_index("Inventory Number"),
     	               get_custom_column_data(store_id).set_index("sku")], axis=1)

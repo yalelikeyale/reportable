@@ -26,7 +26,7 @@ stores["result"] = ""
 stores["report_data"] = ""
 for index, row in stores.iterrows():
   print "### NEW ROW ###: ", index, "-  SID: ", row["store_id"], "-  UID: ", row["user_id"]
-  result, report_data = reports.report_settings.generate_report_data(row["store_id"], row["user_id"], row['gmt_timezone'], row['schedule_at'], row['include_timestamp'])
+  result, report_data = reports.report_settings.generate_report_data(row["store_id"], row['gmt_timezone'], row['schedule_at'], row['include_timestamp'])
   print "final report_data: ", report_data
   if result != 0:
     stores.loc[index, "result"] = report_data
