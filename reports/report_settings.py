@@ -157,10 +157,10 @@ def get_prefs(store_id):
 		from
 		(select *
 		from 
-		((select pt.category, pt.description, pd.*
+		((select pt.category, pt.description, pd.name, pd.uid, pd.store_id, pd.val
 		from preferences_data as pd
 		join preferences_types as pt on pd.name = pt.name
-		where (pd.store_id = %s or pd.uid = %s))
+		where (pd.store_id = 1179059371 or pd.uid = 5960))
 		UNION
 		(select p.category, p.description, p.name, 0 as uid, 0 as store_id, p.def_val as val
 		from preferences_types as p)) b

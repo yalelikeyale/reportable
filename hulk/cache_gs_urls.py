@@ -99,5 +99,6 @@ def cache_urls(store_id, scrapers, sitenames):
 	for filename in filelist:
 		scrapername = scrapers[filelist.index(filename)].replace('.','')
 		hulk_upload_urls(store, filename, scrapername)
+		sp.call("rm %s" % filename, shell=True)
 
 
