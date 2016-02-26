@@ -61,9 +61,9 @@ generate_report.py lets you create report templates with different strategies (m
 Usage:
 ```py
 from reports import generate_report
-competitor_data = generate_report.top_competitor_format(STORE_ID, USER_ID)
+competitor_data = generate_report.top_competitor_format(STORE_ID)
 ```
-Expects: store_id and user_id (int or intable string)
+Expects: store_id (int or intable string)
 
 Returns: DataFrame (pandas) with sku and competitors in top comp format
 
