@@ -82,9 +82,10 @@ def get_store_type(store_id):
 		is_ebay = 1
 	print "store type: ", store_type
 	print "custom ftp mapping: ", ftp_mapping
-	return store_type, is_amazon, is_ebay, ftp_mapping
+	return {"store_type": store_type, "is_amazon": is_amazon, "is_ebay": is_ebay, "ftp_mapping": ftp_mapping}
 
-def get_product_fields(store_id, is_ebay):
+def get_product_fields(store_id):
+	is_ebay = get_store_type(store_id)["is_ebay"]
 	msrp_query = '''select count(pps.msrp) as msrp_count
 			from products_per_store as pps
 			where pps.store_id = %s and pps.msrp is not null and pps.msrp > 0;'''
@@ -160,7 +161,7 @@ def get_prefs(store_id):
 		((select pt.category, pt.description, pd.name, pd.uid, pd.store_id, pd.val
 		from preferences_data as pd
 		join preferences_types as pt on pd.name = pt.name
-		where (pd.store_id = 1179059371 or pd.uid = 5960))
+		where (pd.store_id = {0} or pd.uid = {1}))
 		UNION
 		(select p.category, p.description, p.name, 0 as uid, 0 as store_id, p.def_val as val
 		from preferences_types as p)) b
@@ -168,7 +169,7 @@ def get_prefs(store_id):
 		order by b.name, b.store_id DESC, b.uid DESC) a
 		group by a.name
 		order by a.category, a.name, a.store_id DESC, a.uid DESC;'''
-	store_prefs = pd.read_sql(store_prefs_query % (store_id, uid), con = con)
+	store_prefs = pd.read_sql(store_prefs_query.format(store_id, uid), con = con)
 
 	### Parsing Prefs ###
 	map_screenshots = store_prefs[store_prefs["name"] == "WM_CSV_EXPORT_SS"]['val'].values[0]
@@ -251,11 +252,15 @@ def generate_report_data(store_id, gmt_timezone, schedule_at, include_timestamp)
 
 	# get store type
 	print "getting store type..."
-	store_type, is_amazon, is_ebay, ftp_mapping = get_store_type(store_id)
+	store_type_data = get_store_type(store_id)
+	store_type = store_type_data['store_type']
+	is_amazon = store_type_data['is_amazon']
+	is_ebay = store_type_data['is_ebay']
+	ftp_mapping = store_type_data['ftp_mapping']
 
 	# check if msrp is set in store
 	print "checking store fields..."
-	product_fields = get_product_fields(store_id, is_ebay)
+	product_fields = get_product_fields(store_id)
 
 	# get custom column names
 	print "adding custom columns..."
