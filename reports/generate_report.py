@@ -46,16 +46,16 @@ def get_comp_settings(store_id):
 
 def get_product_data(store_id):
 	'''Get product data based on current store settings or manual overrides'''
-	product_fields = product_fields or rs.get_product_fields(store_id)
+	product_fields = rs.get_product_fields(store_id)
 
 	query = """SELECT prod.name AS "Product Name", prod.sku AS "Inventory Number",
-				prod.stock_level AS "IN STOCK", prod.upc AS "UPC/EAN", prod.asin, 
-				prod.brand AS "Make", prod.model AS "Model", prod.mpn,
-				prod.store_price AS "Product Price", prod.min_price AS "Minimum Price",
-				prod.max_price AS "Maximum Price", prod.store_cost AS "Cost",
-				prod.store_ship AS "Shipping Price", prod.product_url AS "Product URL",
-				prod.image_url AS "Image URL", ROUND(prod.wiseprice, 2) AS "New Price",
-				(SELECT pl.keyword FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels" 
+					prod.stock_level AS "IN STOCK", prod.upc AS "UPC/EAN", prod.asin, 
+					prod.brand AS "Make", prod.model AS "Model", prod.mpn,
+					prod.store_price AS "Product Price", prod.min_price AS "Minimum Price",
+					prod.max_price AS "Maximum Price", prod.store_cost AS "Cost",
+					prod.store_ship AS "Shipping Price", prod.product_url AS "Product URL",
+					prod.image_url AS "Image URL", ROUND(prod.wiseprice, 2) AS "New Price",
+					(SELECT pl.keyword FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels" 
 				FROM products as prod
 				WHERE prod.store_id = {0}"""
 
