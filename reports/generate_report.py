@@ -16,12 +16,6 @@ import config
 ftp_creds = config.ftp_creds
 wiser_redshift_etl = config.wiser_redshift
 
-# stores = ['579991', '1162612429']
-# user_id = '2595'
-# username = 'User%s' % user_id
-# ftppath = ftp_creds['path'] % username
-# fileName = "wp_inv_%s.csv"
-
 db = psycopg2.connect(host=wiser_redshift_etl['host'], user=wiser_redshift_etl['username'], password=wiser_redshift_etl['password'], database=wiser_redshift_etl['database'], port=wiser_redshift_etl['port'], connect_timeout=5)
 
 def get_comp_settings(store_id):
@@ -44,22 +38,28 @@ def get_comp_settings(store_id):
 		price_w_ship = prefs['price_includes_shipping']
 	return {'max_comps': int(max_comps), 'comp_url': int(comp_url), 'price_w_ship': int(price_w_ship)}
 
-def get_product_data(store_id):
+def get_product_data(store_id, filters={}):
 	'''Get product data based on current store settings or manual overrides'''
 	product_fields = rs.get_product_fields(store_id)
 
-	query = """SELECT prod.name AS "Product Name", prod.sku AS "Inventory Number",
-					prod.stock_level AS "IN STOCK", prod.upc AS "UPC/EAN", prod.asin, 
-					prod.brand AS "Make", prod.model AS "Model", prod.mpn,
-					prod.store_price AS "Product Price", prod.min_price AS "Minimum Price",
+	query = """SELECT prod.ppsid, prod.product_id, prod.name AS "Product Name",
+					prod.sku AS "Inventory Number", prod.stock_level AS "IN STOCK",
+					prod.upc AS "UPC/EAN", prod.asin, prod.brand AS "Make", prod.model AS "Model",
+					prod.mpn, prod.store_price AS "Product Price", prod.min_price AS "Minimum Price",
 					prod.max_price AS "Maximum Price", prod.store_cost AS "Cost",
 					prod.store_ship AS "Shipping Price", prod.product_url AS "Product URL",
 					prod.image_url AS "Image URL", ROUND(prod.wiseprice, 2) AS "New Price",
-					(SELECT pl.keyword FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels" 
-				FROM products as prod
-				WHERE prod.store_id = {0}"""
+					(SELECT listagg(pl.keyword, ', ') FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels" 
+					FROM products as prod
+					WHERE prod.store_id = {0}"""
+	query = query.format(store_id)
 
-	product_data = pd.read_sql(query.format(store_id), db)
+	if 'brands' in filters:
+		brands = '|'.join(filters['brands'])
+		print 'brands: ', brands
+		query = query + " AND LOWER(prod.brand) SIMILAR TO LOWER('%({0})%')".format(brands)
+
+	product_data = pd.read_sql(query, db)
 	return product_data
 
 def get_custom_column_data(store_id):
@@ -68,14 +68,14 @@ def get_custom_column_data(store_id):
 	data_list = []
 	for column in custom_columns:
 		query = """SELECT prod.sku, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as {0}
-					FROM products as prod
-					where prod.store_id = {1}"""
+								FROM products as prod
+								where prod.store_id = {1}"""
 		data_list.append(pd.read_sql(query.format(column, store_id), db).set_index('sku'))
 	custom_column_data = pd.concat(data_list, axis=1)
 	return custom_column_data
 
-
-def get_competitor_data(store_id):
+# filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
+def get_competitor_data(store_id, filters={}):
 	'''Get competitor data in comp per row format based on
 	current store settings or manual overrides'''
 
@@ -85,12 +85,23 @@ def get_competitor_data(store_id):
 				LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND GETDATE()-p.last_update <= INTERVAL '7 days' AND p.store_name <> client_store.store_name
 				LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id AND cs.id IS NULL
 				LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
-				WHERE prod.store_id = %s"""
+				WHERE prod.store_id = {0}"""
+	query = query.format(store_id)
 
-	competitor_data = pd.read_sql(query % store_id, db)
+	if 'brands' in filters:
+		brands = '|'.join(filters['brands'])
+		print 'brands: ', brands
+		query = query + " AND LOWER(prod.brand) SIMILAR TO LOWER('%({0})%')".format(brands)
+	if 'competitors' in filters:
+		competitors = '|'.join(filters['competitors'])
+		print 'comps: ', competitors
+		query = query + " AND LOWER(comp_store.store_name) SIMILAR TO LOWER('%({0})%')".format(competitors)
+
+	print query
+	competitor_data = pd.read_sql(query, db)
 	return competitor_data
 
-def top_competitor_format(store_id):
+def top_competitor_format(store_id, filters={}):
 	'''Transform competior data to rows unique by sku instead of (sku, competitor).
 	Competitor formats: (Comp1, Comp1 Price Includes Shiping, Comp1 URL, Comp2...)
 					    (Comp1, Comp1 Price, Comp1 Shiping, Comp1 URL, Comp2...)
@@ -104,7 +115,7 @@ def top_competitor_format(store_id):
 	print "Number of columns per competitor:", cols_per_comp
 
 	print time.strftime("%c"), "getting comp data..."
-	competitor_data = get_competitor_data(store_id)
+	competitor_data = get_competitor_data(store_id, filters)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
 	# competitor_data.to_csv("temptest.csv", index=False)
 	# competitor_data = pd.read_csv("temptest.csv")
@@ -145,7 +156,7 @@ def top_competitor_format(store_id):
 	print time.strftime("%c"), "transposed"
 	transposed = transposed.reset_index(drop=True)
 
-	# fix skus
+	# fix sku format
 	f = lambda x: str(x.split(' ')[0][1:].replace("'", "").replace(']','').replace(',','')) # sku list to single sku
 	transposed['Sku'] = transposed['Sku'].map(f)
 
@@ -179,17 +190,21 @@ def top_competitor_format(store_id):
 	return finalresult
 
 
-def top_competitor_report(store_id):
-
-	prods = pd.concat([get_product_data(store_id).set_index("Inventory Number"),
+def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
+	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1, inplace=True)
+	prods = pd.concat([product_data.set_index("Inventory Number"),
     	               get_custom_column_data(store_id).set_index("sku")], axis=1)
 
 	finalresult = pd.merge(prods, transposed, how='outer', on='Inventory Number')
 	cols = list(finalresult.columns)
 	totcomps = finalresult['Total Competitors']
-	finalresult.drop(labels=['Total Competitors'], axis=1,inplace = True)
+	finalresult.drop(labels=['Total Competitors'], axis=1,inplace=True)
 	finalresult['Total Competitors'] = totcomps
 	print time.strftime("%c"), "merged"
 	print "shape of merge:", finalresult.shape
+
+
+# def competitor_per_row_report(store_id):
+
 
 

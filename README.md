@@ -60,8 +60,9 @@ generate_report.py lets you create report templates with different strategies (m
 
 Usage:
 ```py
-from reports import generate_report
-competitor_data = generate_report.top_competitor_format(STORE_ID)
+from reports import generate_report as gr
+competitor_report_df = gr.top_competitor_format(STORE_ID)
+filtered_comp_data = gr.get_competitor_data(1446251, filters={'competitors': ["staples.com", "office"], 'brands': ["zep"]})
 ```
 Expects: store_id (int or intable string)
 

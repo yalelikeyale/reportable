@@ -6,7 +6,7 @@ from reports import config
 from reports import push_report
 mysqlcon = config.mysqlcon
 
-INPUT_FILE = "sid_uid.csv"
+INPUT_FILE = "sid_uid_test.csv"
 
 ftp_user = os.environ["FTP_USER"]
 ftp_pass = os.environ["FTP_PASS"]
@@ -38,6 +38,6 @@ for index, row in stores.iterrows():
     # UNCOMMENT to actually push report to production
     #push_report.create_row(report_data)
 print "printing results...."
-stores.to_csv("results_you_true.csv")
+stores.to_csv("results_you_brimp.csv")
 print "Done!"
 
