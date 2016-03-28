@@ -58,7 +58,7 @@ send_email.py lets you send emails with attatchments (based on smtplib and mimet
 
 generate_report.py lets you create report templates with different strategies (may need massaging)
 
-Usage:
+**Usage:**
 ```py
 from reports import generate_report as gr
 competitor_report_df = gr.top_competitor_format(STORE_ID)
@@ -70,11 +70,11 @@ Returns: DataFrame (pandas) with sku and competitors in top comp format
 
 Side-effect: Prints settings used to cli
 
-To obtain the standard export use:
+**To obtain the standard export use:**
 ```
 gr.top_competitor_report(STORE_ID)
 ```
-Standard export example using filters:
+**Standard export example using filters:**
 ```
 gr.top_competitor_report(1446251, {'competitors': ['staples.com']})
 ```
