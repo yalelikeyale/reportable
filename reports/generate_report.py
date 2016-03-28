@@ -49,7 +49,8 @@ def get_product_data(store_id, filters={}):
 					prod.max_price AS "Maximum Price", prod.store_cost AS "Cost",
 					prod.store_ship AS "Shipping Price", prod.product_url AS "Product URL",
 					prod.image_url AS "Image URL", ROUND(prod.wiseprice, 2) AS "New Price",
-					(SELECT listagg(pl.keyword, ', ') FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels" 
+					(SELECT listagg(pl.keyword, ', ') FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels",
+					prod.competitors_count as "total competitors" 
 					FROM products as prod
 					WHERE prod.store_id = {0}"""
 	query = query.format(store_id)
@@ -72,6 +73,8 @@ def get_custom_column_data(store_id):
 								where prod.store_id = {1}"""
 		data_list.append(pd.read_sql(query.format(column, store_id), db).set_index('sku'))
 	custom_column_data = pd.concat(data_list, axis=1)
+	custom_column_data['inventory number'] = custom_column_data.index
+	custom_column_data.reset_index(drop=True)
 	return custom_column_data
 
 # filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
@@ -79,10 +82,11 @@ def get_competitor_data(store_id, filters={}):
 	'''Get competitor data in comp per row format based on
 	current store settings or manual overrides'''
 
+	# no longer filtering by date (AND GETDATE()-p.last_update <= INTERVAL '7 days')
 	query = """SELECT prod.sku, p.store_name AS "Comp", p.price AS "Comp Price", p.ship AS "Comp Shipping", p.url AS "Comp URL", prod.competitors_count AS "Total Competitors"
 				FROM products AS prod
 				JOIN stores as client_store on client_store.id = prod.store_id
-				LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND GETDATE()-p.last_update <= INTERVAL '7 days' AND p.store_name <> client_store.store_name
+				LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name
 				LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id AND cs.id IS NULL
 				LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
 				WHERE prod.store_id = {0}"""
@@ -187,21 +191,28 @@ def top_competitor_format(store_id, filters={}):
 			finalresult["Comp%s Price" % i] = ""
 			finalresult["Comp%s Shipping" % i] = ""
 
+	finalresult.rename(columns={'Sku':'inventory number'}, inplace=True)
 	return finalresult
 
-
+# Example Call for generating top_competitor_report:
+# from reports import generate_report as gr
+# gr.top_competitor_report(1446251, {'competitors': ['staples.com']})
 def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
-	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1, inplace=True)
-	prods = pd.concat([product_data.set_index("Inventory Number"),
-    	               get_custom_column_data(store_id).set_index("sku")], axis=1)
+	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
+	custom_cols = get_custom_column_data(store_id)
+	prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
+	print prods
+	
+	comp_data = top_competitor_format(store_id, filters)
 
-	finalresult = pd.merge(prods, transposed, how='outer', on='Inventory Number')
-	cols = list(finalresult.columns)
-	totcomps = finalresult['Total Competitors']
-	finalresult.drop(labels=['Total Competitors'], axis=1,inplace=True)
-	finalresult['Total Competitors'] = totcomps
+	print "comp data: ", comp_data
+	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
+	totcomps = finalresult['total competitors']
+	finalresult.drop(labels=['total competitors'], axis=1,inplace=True)
+	finalresult['total competitors'] = totcomps
 	print time.strftime("%c"), "merged"
 	print "shape of merge:", finalresult.shape
+	return finalresult
 
 
 # def competitor_per_row_report(store_id):
