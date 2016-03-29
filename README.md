@@ -76,7 +76,7 @@ gr.top_competitor_report(STORE_ID)
 ```
 **Standard export example using filters:**
 ```
-gr.top_competitor_report(1446251, {'competitors': ['staples.com']})
+gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 ```
 
 
