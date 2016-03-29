@@ -91,7 +91,7 @@ def get_competitor_data(store_id, filters={}):
 				LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
 				WHERE prod.store_id = {0}"""
 	query = query.format(store_id)
-
+	print filters
 	if 'brands' in filters:
 		brands = '|'.join(filters['brands'])
 		print 'brands: ', brands
@@ -119,6 +119,7 @@ def top_competitor_format(store_id, filters={}):
 	print "Number of columns per competitor:", cols_per_comp
 
 	print time.strftime("%c"), "getting comp data..."
+	print filters
 	competitor_data = get_competitor_data(store_id, filters)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
 	# competitor_data.to_csv("temptest.csv", index=False)
@@ -196,16 +197,14 @@ def top_competitor_format(store_id, filters={}):
 
 # Example Call for generating top_competitor_report:
 # from reports import generate_report as gr
-# gr.top_competitor_report(1446251, {'competitors': ['staples.com']})
+# gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	custom_cols = get_custom_column_data(store_id)
 	prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
-	print prods
 	
 	comp_data = top_competitor_format(store_id, filters)
 
-	print "comp data: ", comp_data
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	totcomps = finalresult['total competitors']
 	finalresult.drop(labels=['total competitors'], axis=1,inplace=True)
