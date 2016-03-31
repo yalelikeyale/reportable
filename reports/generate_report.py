@@ -119,7 +119,6 @@ def top_competitor_format(store_id, filters={}):
 	print "Number of columns per competitor:", cols_per_comp
 
 	print time.strftime("%c"), "getting comp data..."
-	print filters
 	competitor_data = get_competitor_data(store_id, filters)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
 	# competitor_data.to_csv("temptest.csv", index=False)
@@ -160,9 +159,9 @@ def top_competitor_format(store_id, filters={}):
 	transposed.columns = map(lambda x: "Sku" if x[0]=="Sku" else x[0][0:4]+str(x[1]+1)+x[0][4:], transposed.columns.tolist()) # colapse multi index to numbered columns
 	print time.strftime("%c"), "transposed"
 	transposed = transposed.reset_index(drop=True)
-
 	# fix sku format
-	f = lambda x: str(x.split(' ')[0][1:].replace("'", "").replace(']','').replace(',','')) # sku list to single sku
+	# list("['RB2016 59 W2578' 'RB2016 59 W2578' 'RB2016 59 W2578' 'RB2016 59 W2578']".replace('[','').replace(']','').split("' '"))[0].replace("'","")
+	f = lambda x: str(list(x.replace('[','').replace(']','').split("' '"))[0].replace("'","")) # sku list to single sku
 	transposed['Sku'] = transposed['Sku'].map(f)
 
 	numcomps = (len(transposed.columns.tolist())-1)/cols_per_comp
@@ -192,19 +191,22 @@ def top_competitor_format(store_id, filters={}):
 			finalresult["Comp%s Price" % i] = ""
 			finalresult["Comp%s Shipping" % i] = ""
 
-	finalresult.rename(columns={'Sku':'inventory number'}, inplace=True)
+	finalresult['inventory number'] = finalresult['Sku']
+	finalresult.drop('Sku', axis=1, inplace=True)
 	return finalresult
 
 # Example Call for generating top_competitor_report:
 # from reports import generate_report as gr
 # gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
+# gr.top_competitor_report(1178770744).to_csv("topcompTESTing.csv")
 def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	custom_cols = get_custom_column_data(store_id)
 	prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
-	
 	comp_data = top_competitor_format(store_id, filters)
 
+	# prods.to_csv("prods.csv")
+	# comp_data.to_csv("comp_data.csv")
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	totcomps = finalresult['total competitors']
 	finalresult.drop(labels=['total competitors'], axis=1,inplace=True)
@@ -214,7 +216,4 @@ def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='f
 	return finalresult
 
 
-# def competitor_per_row_report(store_id):
-
-
-
+ 
