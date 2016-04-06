@@ -226,8 +226,6 @@ def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='f
 	print "compcols: ", compcols
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	cols = finalresult.columns.values.tolist()[0:prod_column_count]
-	del compcols[0]
-	print "compcols: ", compcols
 	print "cols: ", cols
 	f = lambda x: x.title()
 	newcols = list(map(f, cols))
