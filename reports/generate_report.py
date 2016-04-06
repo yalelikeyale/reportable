@@ -41,6 +41,8 @@ def get_comp_settings(store_id):
 def get_product_data(store_id, filters={}):
 	'''Get product data based on current store settings or manual overrides'''
 	product_fields = rs.get_product_fields(store_id)
+	msrpqry = """select prod.sku as "inventory number", prod.msrp from products prod where prod.store_id = {0}"""
+	msrpqry = msrpqry.format(store_id)
 
 	query = """SELECT prod.ppsid, prod.product_id, prod.name AS "Product Name",
 					prod.sku AS "Inventory Number", prod.stock_level AS "IN STOCK",
@@ -61,6 +63,11 @@ def get_product_data(store_id, filters={}):
 		query = query + " AND LOWER(prod.brand) SIMILAR TO LOWER('%({0})%')".format(brands)
 
 	product_data = pd.read_sql(query, db)
+
+	if "msrp" in product_fields:
+		print "msrp YESSSSSS KEVIN!"
+		msrpdata = pd.read_sql(msrpqry, db)
+		product_data = pd.merge(product_data, msrpdata, on="inventory number", how="outer")
 	return product_data
 
 def get_custom_column_data(store_id):
@@ -72,7 +79,12 @@ def get_custom_column_data(store_id):
 								FROM products as prod
 								where prod.store_id = {1}"""
 		data_list.append(pd.read_sql(query.format(column, store_id), db).set_index('sku'))
-	custom_column_data = pd.concat(data_list, axis=1)
+	try:
+		custom_column_data = pd.concat(data_list, axis=1)
+	except Exception, e:
+		print e
+		print 'no custom columns'
+		return None
 	custom_column_data['inventory number'] = custom_column_data.index
 	custom_column_data.reset_index(drop=True)
 	return custom_column_data
@@ -121,7 +133,7 @@ def top_competitor_format(store_id, filters={}):
 	print time.strftime("%c"), "getting comp data..."
 	competitor_data = get_competitor_data(store_id, filters)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
-	# competitor_data.to_csv("temptest.csv", index=False)
+	competitor_data.to_csv("temptest.csv", index=False)
 	# competitor_data = pd.read_csv("temptest.csv")
 	print time.strftime("%c"), "shape of comp data:", competitor_data.shape
 
@@ -160,7 +172,6 @@ def top_competitor_format(store_id, filters={}):
 	print time.strftime("%c"), "transposed"
 	transposed = transposed.reset_index(drop=True)
 	# fix sku format
-	# list("['RB2016 59 W2578' 'RB2016 59 W2578' 'RB2016 59 W2578' 'RB2016 59 W2578']".replace('[','').replace(']','').split("' '"))[0].replace("'","")
 	f = lambda x: str(list(x.replace('[','').replace(']','').split("' '"))[0].replace("'","")) # sku list to single sku
 	transposed['Sku'] = transposed['Sku'].map(f)
 
@@ -180,7 +191,7 @@ def top_competitor_format(store_id, filters={}):
 	 		else:
 	 			neworder.extend([transposed.columns[i], transposed.columns[i+numcomps], transposed.columns[i+numcomps*2]])
 	finalresult = transposed[neworder]
-
+	finalresult.to_csv("beforefill.csv")
 	# Add emtpy competitor columns to keep constant column count
 	for i in range(numcomps, max_comps+1):
 		if price_w_ship:
@@ -193,24 +204,47 @@ def top_competitor_format(store_id, filters={}):
 
 	finalresult['inventory number'] = finalresult['Sku']
 	finalresult.drop('Sku', axis=1, inplace=True)
+	finalresult.to_csv("afterfill.csv")
 	return finalresult
 
 # Example Call for generating top_competitor_report:
 # from reports import generate_report as gr
 # gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 # gr.top_competitor_report(1178770744).to_csv("topcompTESTing.csv")
+# gr.top_competitor_report(1189273733).to_csv("bctestMSRP.csv")
 def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	custom_cols = get_custom_column_data(store_id)
-	prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
+	if len(custom_cols) > 1:
+		prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
+	else:
+		prods = product_data
 	comp_data = top_competitor_format(store_id, filters)
+
+	prod_column_count = len(prods.columns)
+	compcols = comp_data.columns.values.tolist()
+	print "compcols: ", compcols
+	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
+	cols = finalresult.columns.values.tolist()[0:prod_column_count]
+	del compcols[0]
+	print "compcols: ", compcols
+	print "cols: ", cols
+	f = lambda x: x.title()
+	newcols = list(map(f, cols))
+	print "newcols: ", newcols
+	finalcols = newcols + compcols
+	print "finalcols: ", finalcols
+	print "resultcols: ", finalresult.columns
+	finalresult.columns = finalcols
 
 	# prods.to_csv("prods.csv")
 	# comp_data.to_csv("comp_data.csv")
-	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
-	totcomps = finalresult['total competitors']
-	finalresult.drop(labels=['total competitors'], axis=1,inplace=True)
-	finalresult['total competitors'] = totcomps
+	# TODO:
+	# FIX THIS BULLSHIT ABOVE
+
+	totcomps = finalresult['Total Competitors']
+	finalresult.drop(labels=['Total Competitors'], axis=1,inplace=True)
+	finalresult['Total Competitors'] = totcomps
 	print time.strftime("%c"), "merged"
 	print "shape of merge:", finalresult.shape
 	return finalresult
