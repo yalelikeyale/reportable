@@ -230,7 +230,7 @@ def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='f
 	f = lambda x: x.title()
 	newcols = list(map(f, cols))
 	print "newcols: ", newcols
-	finalcols = newcols + compcols
+	finalcols = newcols + compcols[0:-1]
 	print "finalcols: ", finalcols
 	print "resultcols: ", finalresult.columns
 	finalresult.columns = finalcols
