@@ -84,7 +84,7 @@ def get_custom_column_data(store_id):
 	except Exception, e:
 		print e
 		print 'no custom columns'
-		return None
+		return pd.DataFrame()
 	custom_column_data['inventory number'] = custom_column_data.index
 	custom_column_data.reset_index(drop=True)
 	return custom_column_data
@@ -215,7 +215,7 @@ def top_competitor_format(store_id, filters={}):
 def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='ftp', address=None, filters={}):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	custom_cols = get_custom_column_data(store_id)
-	if custom_cols and len(custom_cols) > 1:
+	if not custom_cols.empty and len(custom_cols) > 1:
 		prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
 	else:
 		prods = product_data
