@@ -144,7 +144,7 @@ def top_competitor_format(store_id, filters={}):
 	# create price includes shipping column
 	competitor_data.insert(3,'Comp Price Includes Shipping', competitor_data['Comp Price'] + competitor_data['Comp Shipping'])
 	# sort df by sku and comp offer
-	sortedresult = competitor_data.sort(['Sku', 'Comp Price Includes Shipping'], ascending=[0,1])
+	sortedresult = competitor_data.sort(['Sku', 'Comp Price'], ascending=[0,1])
 	print time.strftime("%c"), "sorted"
 	competitor_data = None
 
