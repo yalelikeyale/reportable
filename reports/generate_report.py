@@ -167,8 +167,9 @@ def top_competitor_format(store_id, filters={}):
 	transposed.columns = map(lambda x: "Sku" if x[0]=="Sku" else x[0][0:4]+str(x[1]+1)+x[0][4:], transposed.columns.tolist()) # colapse multi index to numbered columns
 	print time.strftime("%c"), "transposed"
 	transposed = transposed.reset_index(drop=True)
+	transposed.to_csv('drmotherfucker.csv')
 	# fix sku format
-	f = lambda x: str(list(x.replace('[','').replace(']','').split("' '"))[0].replace("'","")) # sku list to single sku
+	f = lambda x: str(list(x.replace('[','').replace(']','').replace('\n','').replace('\t','').split("' '"))[0].replace("'","")) # sku list to single sku
 	transposed['Sku'] = transposed['Sku'].map(f)
 
 	numcomps = (len(transposed.columns.tolist())-1)/cols_per_comp
