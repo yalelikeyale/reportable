@@ -24,17 +24,14 @@ def get_comp_settings(store_id):
 	try:
 		max_comps = max_comps
 	except Exception, e:
-		print e
 		max_comps = prefs['max_comps']
 	try:
 		comp_url = comp_url
 	except Exception, e:
-		print e
 		comp_url = prefs['comp_url']
 	try:
 		price_w_ship = price_w_ship
 	except Exception, e:
-		print e
 		price_w_ship = prefs['price_includes_shipping']
 	return {'max_comps': int(max_comps), 'comp_url': int(comp_url), 'price_w_ship': int(price_w_ship)}
 
@@ -65,7 +62,6 @@ def get_product_data(store_id, filters={}):
 	product_data = pd.read_sql(query, db)
 
 	if "msrp" in product_fields:
-		print "msrp YESSSSSS KEVIN!"
 		msrpdata = pd.read_sql(msrpqry, db)
 		product_data = pd.merge(product_data, msrpdata, on="inventory number", how="outer")
 	return product_data
@@ -82,7 +78,6 @@ def get_custom_column_data(store_id):
 	try:
 		custom_column_data = pd.concat(data_list, axis=1)
 	except Exception, e:
-		print e
 		print 'no custom columns'
 		return pd.DataFrame()
 	custom_column_data['inventory number'] = custom_column_data.index
@@ -135,7 +130,6 @@ def top_competitor_format(store_id, filters={}):
 	print time.strftime("%c"), "getting comp data..."
 	competitor_data = get_competitor_data(store_id, filters)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
-	competitor_data.to_csv("temptest.csv", index=False)
 	# competitor_data = pd.read_csv("temptest.csv")
 	print time.strftime("%c"), "shape of comp data:", competitor_data.shape
 
@@ -193,7 +187,6 @@ def top_competitor_format(store_id, filters={}):
 	 		else:
 	 			neworder.extend([transposed.columns[i], transposed.columns[i+numcomps], transposed.columns[i+numcomps*2]])
 	finalresult = transposed[neworder]
-	finalresult.to_csv("beforefill.csv")
 	# Add emtpy competitor columns to keep constant column count
 	for i in range(numcomps, max_comps+1):
 		if price_w_ship:
@@ -206,7 +199,6 @@ def top_competitor_format(store_id, filters={}):
 
 	finalresult['inventory number'] = finalresult['Sku']
 	finalresult.drop('Sku', axis=1, inplace=True)
-	finalresult.to_csv("afterfill.csv")
 	return finalresult
 
 # Example Call for generating top_competitor_report:
@@ -225,16 +217,11 @@ def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='f
 
 	prod_column_count = len(prods.columns)
 	compcols = comp_data.columns.values.tolist()
-	print "compcols: ", compcols
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	cols = finalresult.columns.values.tolist()[0:prod_column_count]
-	print "cols: ", cols
 	f = lambda x: x.title()
 	newcols = list(map(f, cols))
-	print "newcols: ", newcols
 	finalcols = newcols + compcols[0:-1]
-	print "finalcols: ", finalcols
-	print "resultcols: ", finalresult.columns
 	finalresult.columns = finalcols
 
 	# prods.to_csv("prods.csv")
