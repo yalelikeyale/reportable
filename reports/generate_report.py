@@ -167,7 +167,7 @@ def top_competitor_format(store_id, filters={}):
 	transposed.columns = map(lambda x: "Sku" if x[0]=="Sku" else x[0][0:4]+str(x[1]+1)+x[0][4:], transposed.columns.tolist()) # colapse multi index to numbered columns
 	print time.strftime("%c"), "transposed"
 	transposed = transposed.reset_index(drop=True)
-	transposed.to_csv('drmotherfucker.csv')
+
 	# fix sku format
 	f = lambda x: str(list(x.replace('[','').replace(']','').replace('\n','').replace('\t','').split("' '"))[0].replace("'","")) # sku list to single sku
 	transposed['Sku'] = transposed['Sku'].map(f)
@@ -237,5 +237,17 @@ def top_competitor_report(store_id, filetype='csv', delimiter=',', exporttype='f
 	print "shape of merge:", finalresult.shape
 	return finalresult
 
-
+def distinct_row_report(store_id, filters={}):
+	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
+	custom_cols = get_custom_column_data(store_id)
+	if not custom_cols.empty and len(custom_cols) > 1:
+		prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
+	else:
+		prods = product_data
+	comp_data = get_competitor_data(store_id, filters)
+	comp_data['inventory number'] = comp_data['sku']
+	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
+	finalresult.rename(columns={'total competitors_y': 'total competitors'}, inplace=True)
+	finalresult.drop(['sku', 'total competitors_x'], axis=1, inplace=True)
+	return finalresult
  
