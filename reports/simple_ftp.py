@@ -101,7 +101,8 @@ def sftp_drop(host, port, user, pwrd, path, filename):
 			sftp.put(filename,remotepath)
 		except Exception as e:
 			print e
+			sftp.close()
 		else:
 			print time.strftime("%c"), "sftp drop: %s" % remotepath
 			print "Success!"
-		sftp.close()
+			sftp.close()

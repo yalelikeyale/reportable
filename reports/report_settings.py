@@ -206,21 +206,38 @@ def get_prefs(store_id):
 		        "store_name": "Competitor"
 		    }
 		competitor_fields = OrderedDict([
+						("price_includes_shipping", "Competitor Price Includes Shipping"),
 		        ("price", "Competitor Price"),
 		        ("ship", "Competitor Shipping"),
-		        ("url", "Competitor URL")
+		        ("url", "Competitor URL"),
+		        ("unit_count", "Competitor Units"),
+		        ("unit_price", "Competitor Unit Price")
+
 		    ])
 	else:
 		competitor_store_data_fields = {
 		        "store_name": "Comp${NUM}"
 		    }
 		competitor_fields = OrderedDict([
+								("price_includes_shipping", "Comp${NUM} Price Includes Shipping"),
 		            ("price", "Comp${NUM} Price"),
 		            ("ship", "Comp${NUM} Shipping"),
-		            ("url", "Comp${NUM} URL")
+		            ("url", "Comp${NUM} URL"),
+		            ("unit_count", "Comp${NUM} Units"),
+		            ("unit_price", "Comp${NUM} Unit Price")
 		        ])
 	if comp_url == 0:
-			competitor_fields.popitem(last=True) # do NOT include competitor url
+		del competitor_fields['url'] # do NOT include competitor url
+	if int(price_includes_shipping) > 0:
+		del competitor_fields['price']
+		del competitor_fields['ship']
+	else:
+		del competitor_fields['price_includes_shipping']
+	if int(is_uom) > 0:
+		print "uom OK!"
+	else:
+		del competitor_fields['unit_count']
+		del competitor_fields['unit_price']
 
 	# old unaccepted prefs
 	only_new_price = store_prefs[store_prefs["name"] == "FTP_EXPORT_ONLY_NEW_PRICE"]['val'].values[0]
@@ -269,7 +286,13 @@ def generate_report_data(store_id, gmt_timezone, schedule_at, include_timestamp)
 	# get and parse prefs
 	print "parsing preferences..."
 	preferences = get_prefs(store_id)
-  # map_screenshots, price_includes_shipping, is_uom, csv_delimiter, competitor_per_row, max_comps, competitor_store_data_fields, competitor_fields, only_new_price, only_valid_wiseprice
+
+	mapper_fields = {}
+	if int(preferences['map_screenshots']) > 0:
+		if int(preferences['competitor_per_row']) > 0:
+			mapper_fields = {"image_url": "Violator Screenshot"}
+		else:
+		  mapper_fields = {"image_url": "Comp${NUM} Violator Screenshot"}
 
 	settings_json = json.dumps({
         "is_amazon": str(is_amazon),
@@ -281,7 +304,8 @@ def generate_report_data(store_id, gmt_timezone, schedule_at, include_timestamp)
             "product_fields": product_fields,
             "custom_attr_fields": custom_attr_fields,
             "competitor_store_data_fields": preferences['competitor_store_data_fields'],
-            "competitor_fields": preferences['competitor_fields']
+            "competitor_fields": preferences['competitor_fields'],
+            "mapper_fields": mapper_fields
         }
     })
 
@@ -305,12 +329,6 @@ def generate_report_data(store_id, gmt_timezone, schedule_at, include_timestamp)
 		return -1, "error: incorrect schedule time - %s" % gmt_timezone
 	if include_timestamp != 0 and include_timestamp != 1:
 		return -1, "error: include_timestamp must be 1 or 0"
-	if int(preferences['map_screenshots']) > 0:
-		return -1, "error: No map screenshots yet."
-	if int(preferences['price_includes_shipping']) > 0:
-		return -1, "error: No price_includes_shipping yet."
-	if int(preferences['is_uom']) > 0:
-		return -1, "error: No uom stores just yet."
 	if preferences['only_valid_wiseprice'] == 1 or preferences['only_new_price'] == 1:
 		return -1, "error: These settings are not available - only_new_price, only_valid_wiseprice"
 
