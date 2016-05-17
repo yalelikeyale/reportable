@@ -38,18 +38,16 @@ def get_comp_settings(store_id):
 def get_product_data(store_id, filters={}):
 	'''Get product data based on current store settings or manual overrides'''
 	product_fields = rs.get_product_fields(store_id)
-	msrpqry = """select prod.sku as "inventory number", prod.msrp from products prod where prod.store_id = {0}"""
-	msrpqry = msrpqry.format(store_id)
 
 	query = """SELECT prod.ppsid, prod.product_id, prod.name AS "Product Name",
 					prod.sku AS "Inventory Number", prod.stock_level AS "IN STOCK",
-					prod.upc AS "UPC/EAN", prod.asin, prod.brand AS "Make", prod.model AS "Model",
+					prod.upc AS "UPC/EAN", prod.asin, prod.epid, prod.brand AS "Make", prod.model AS "Model",
 					prod.mpn, prod.store_price AS "Product Price", prod.min_price AS "Minimum Price",
 					prod.max_price AS "Maximum Price", prod.store_cost AS "Cost",
 					prod.store_ship AS "Shipping Price", prod.product_url AS "Product URL",
 					prod.image_url AS "Image URL", ROUND(prod.wiseprice, 2) AS "New Price",
 					(SELECT listagg(pl.keyword, ', ') FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels",
-					prod.competitors_count as "total competitors" 
+					prod.msrp, prod.competitors_count as "total competitors" 
 					FROM products as prod
 					WHERE prod.store_id = {0}"""
 	query = query.format(store_id)
@@ -61,9 +59,12 @@ def get_product_data(store_id, filters={}):
 
 	product_data = pd.read_sql(query, db)
 
-	if "msrp" in product_fields:
-		msrpdata = pd.read_sql(msrpqry, db)
-		product_data = pd.merge(product_data, msrpdata, on="inventory number", how="outer")
+	drop_fields = []
+	if "msrp" not in product_fields:
+		drop_fields.append("msrp")
+	if "epid" not in product_fields:
+		drop_fields.append("epid")
+	product_data.drop(drop_fields, axis=1, inplace=True)
 	return product_data
 
 def get_custom_column_data(store_id):
