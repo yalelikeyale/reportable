@@ -93,6 +93,14 @@ def get_product_fields(store_id):
 	msrp_result = pd.read_sql(msrp_query % store_id, con = con)
 	msrp = msrp_result.loc[0]["msrp_count"]
 
+	epid_query = '''select count(prod.epid) as epid_count
+			from products as prod
+			join products_per_store as pps on pps.product_id = prod.id
+			where pps.store_id = %s and prod.epid is not null and (prod.epid > 0 or prod.epid <> "");'''
+
+	epid_result = pd.read_sql(epid_query % store_id, con = con)
+	epid = epid_result.loc[0]["epid_count"]
+
 	condition_query = '''select count(pps.condition) as cond_count
 			from products_per_store as pps
 			where pps.store_id = %s and pps.condition is not null and pps.condition not like "new";'''
@@ -126,7 +134,7 @@ def get_product_fields(store_id):
 		product_fields.popitem(last=True) # do NOT include msrp
 	if cond == 0:
 		del product_fields["condition"]
-	if is_ebay != 1:
+	if is_ebay != 1 and epid == 0:
 		del product_fields["epid"]
 
 
