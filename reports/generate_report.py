@@ -112,7 +112,7 @@ def get_competitor_data(store_id, filters={}):
 		competitors = '|'.join(filters['competitors'])
 		print 'comps: ', competitors
 		query = query + " AND LOWER(comp_store.store_name) SIMILAR TO LOWER('%({0})%')".format(competitors)
-	if filters['comp_url']:
+	if comp_url in filters:
 		comp_url = '|'.join(filters['comp_url'])
 		print 'comp_urls: ', comp_url
 		query = query + " AND LOWER(p.url) SIMILAR TO LOWER('%({0})%')".format(comp_url)
