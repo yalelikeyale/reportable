@@ -86,7 +86,7 @@ def get_custom_column_data(store_id):
 	return custom_column_data
 
 # filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
-def get_competitor_data(store_id, filters={}):
+def get_competitor_data(store_id, filters={}, dedup=False):
 	'''Get competitor data in comp per row format based on
 	current store settings or manual overrides'''
 
@@ -116,14 +116,16 @@ def get_competitor_data(store_id, filters={}):
 		comp_url = '|'.join(filters['comp_url'])
 		print 'comp_urls: ', comp_url
 		query = query + " AND LOWER(p.url) SIMILAR TO LOWER('%({0})%')".format(comp_url)
-
 	print query
 	competitor_data = pd.read_sql(query, db)
 	competitor_data = competitor_data[pd.isnull(competitor_data['csid'])]
+	if dedup:
+		print "deduping...."
+		competitor_data = competitor_data.sort(columns=['sku', 'comp price'], ascending=True).groupby(['sku', 'comp']).head(1)
 	competitor_data.drop(['csid'], axis=1, inplace=True)
 	return competitor_data
 
-def top_competitor_format(store_id, filters={}, screenshots=False):
+def top_competitor_format(store_id, filters={}, screenshots=False, dedup=False):
 	'''Transform competior data to rows unique by sku instead of (sku, competitor).
 	Competitor formats: (Comp1, Comp1 Price Includes Shiping, Comp1 URL, Comp2...)
 					    (Comp1, Comp1 Price, Comp1 Shiping, Comp1 URL, Comp2...)
@@ -137,7 +139,7 @@ def top_competitor_format(store_id, filters={}, screenshots=False):
 	print "Number of columns per competitor:", cols_per_comp
 
 	print time.strftime("%c"), "getting comp data..."
-	competitor_data = get_competitor_data(store_id, filters)
+	competitor_data = get_competitor_data(store_id, filters, dedup)
 	# Uncomment below to test from file (be sure to comment out the query above to save load)
 	# competitor_data = pd.read_csv("temptest.csv")
 	print time.strftime("%c"), "shape of comp data:", competitor_data.shape
@@ -235,7 +237,7 @@ def top_competitor_format(store_id, filters={}, screenshots=False):
 # gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 # gr.top_competitor_report(1178770744).to_csv("topcompTESTing.csv")
 # gr.top_competitor_report(1189273733).to_csv("bctestMSRP.csv")
-def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False):
+def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	if custom_columns:
 		custom_cols = get_custom_column_data(store_id)
@@ -245,7 +247,7 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 			prods = product_data
 	else:
 		prods = product_data
-	comp_data = top_competitor_format(store_id, filters, screenshots)
+	comp_data = top_competitor_format(store_id, filters, screenshots, dedup)
 
 	prod_column_count = len(prods.columns)
 	compcols = comp_data.columns.values.tolist()
@@ -268,14 +270,14 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 	print "shape of merge:", finalresult.shape
 	return finalresult
 
-def distinct_row_report(store_id, filters={}, custom_columns=True, screenshots=False):
+def distinct_row_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	custom_cols = get_custom_column_data(store_id)
 	if not custom_cols.empty and len(custom_cols) > 1:
 		prods = pd.merge(product_data, custom_cols, how='outer', on='inventory number')
 	else:
 		prods = product_data
-	comp_data = get_competitor_data(store_id, filters)
+	comp_data = get_competitor_data(store_id, filters, dedup)
 	comp_data['inventory number'] = comp_data['sku']
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	finalresult.rename(columns={'total competitors_y': 'total competitors'}, inplace=True)

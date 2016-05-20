@@ -1,12 +1,18 @@
 import pandas as pd
 from config import aurora
-#from reportdata import report_data
+import reportdata
 
 import pymysql as mdb
 import sys
 
 con = mdb.connect(host=aurora["host"], user=aurora["username"], passwd=aurora["password"], db=aurora["database"])
 cur = con.cursor()
+
+# mcon = mdb.connect(host='127.0.0.1', user='root', db='wisereports_dev')
+# mcur = con.cursor()
+
+
+report_data = reportdata.report_data
 
 def has_duplicate(report_data):
   sid = report_data[0]
@@ -23,7 +29,7 @@ def has_duplicate(report_data):
     AND target_connection_string = "{2}"
     AND recurrence_in_minutes = {3}
     AND gmt_timezone = {4}
-    AND (scheduled_at = "{5}" OR scheduled_at = DATE_ADD("{5}", INTERVAL 1 DAY))
+    AND (scheduled_at = "{5}" OR scheduled_at = DATE_ADD("{5}", INTERVAL 1 DAY));
     """
 
   try:
@@ -40,26 +46,12 @@ def has_duplicate(report_data):
 
 
 def create_row(report_data):
-  if has_duplicate:
-    return "Duplicate Record!  Row not created."
+  # if has_duplicate:
+  #   return "Duplicate Record!  Row not created."
 
   try:
-    print """INSERT INTO reports (
-    store_id, 
-    compress, 
-    include_timestamp_in_filename,
-    target_connection_string, 
-    recurrence_in_minutes,
-    gmt_timezone,
-    scheduled_at,
-    status,
-    csv_delimiter,
-    report_data,
-    created_at,
-    updated_at
-      ) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+    print """INSERT INTO reports (store_id, compress, include_timestamp_in_filename,target_connection_string, recurrence_in_minutes, gmt_timezone,scheduled_at,status,csv_delimiter,report_data,created_at,updated_at) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
     """ % report_data
-
     cur.execute("""INSERT INTO reports (
     store_id, 
     compress, 
@@ -83,3 +75,4 @@ def create_row(report_data):
     if con:
         con.close()
   
+create_row(report_data)
