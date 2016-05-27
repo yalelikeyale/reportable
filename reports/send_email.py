@@ -46,6 +46,6 @@ def send_email(email_subject, filename_list, email_list, bcc_list=[]):
 	full_email_list = email_list + bcc_list
 	server.sendmail(email_from, full_email_list, msg.as_string())
 
-	print "sent message to %s" % email_list
+	print "sent message to: %s" % email_list
 	print "bcc: %s" % bcc_list
 	server.quit()
