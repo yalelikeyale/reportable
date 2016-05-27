@@ -42,7 +42,7 @@ bcc_list = ['adam.david@wiser.com', 'thumarut.vareechon@wiser.com', 'tenzin.wang
 file_list = ['MAP_report1.csv', 'MAP_report2.csv']
 se.send_email("WiseReport - MAP Policy Updated Violators", file_list, email_list, bcc_list)
 ```
-Expects: email_subject, list of filenames, list of emails, list of bcc emails (OPTIONAL)
+Expects: email_subject, list of filenames, list of emails, list of bcc emails (optional)
 
 Returns: nothing
 
