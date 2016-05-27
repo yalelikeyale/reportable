@@ -38,10 +38,11 @@ Usage:
 ```py
 from reports import send_email as se
 email_list = ['client1@client.com', 'client2@client.com']
-bcc_list = [adam.david@wiser.com', 'thumarut.vareechon@wiser.com', 'tenzin.wangdhen@wiser.com']
+bcc_list = ['adam.david@wiser.com', 'thumarut.vareechon@wiser.com', 'tenzin.wangdhen@wiser.com']
 se.send_email("WiseReport - MAP Policy Updated Violators", ['MAP_report1.csv', 'MAP_report2.csv'], email_list, bcc_list)
 ```
 Expects: email_subject, list of filenames, list of emails, list of bcc emails (OPTIONAL)
+
 Returns: nothing
 
 
