@@ -22,7 +22,7 @@ def send_email(email_subject, filename_list, email_list, bcc_list=[]):
 		msg.attach(part)
 
 	#get uploads@wisepricer.com credentials
-	email_from_display = os.environ['UL_USER']
+	email_from = os.environ['UL_USER']
 	username = os.environ['UL_USER']
 	password = os.environ['UL_PASS']
 
@@ -30,7 +30,7 @@ def send_email(email_subject, filename_list, email_list, bcc_list=[]):
 	email_to_display = ", ".join(email_list)
 
 	#format email
-	msg["From"] = email_from_display
+	msg["From"] = email_from
 	msg["To"] = email_to_display
 	msg["Subject"] = email_subject
 	msg.preamble = email_subject #for when displaying msg in text editor
@@ -44,7 +44,7 @@ def send_email(email_subject, filename_list, email_list, bcc_list=[]):
 	#send mail request
 	print "sending email request..."
 	full_email_list = email_list + bcc_list
-	server.sendmail(email_from_display, full_email_list, msg.as_string())
+	server.sendmail(email_from, full_email_list, msg.as_string())
 
 	print "sent message to %s" % email_list
 	print "bcc: %s" % bcc_list
