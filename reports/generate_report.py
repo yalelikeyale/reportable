@@ -49,7 +49,7 @@ def get_product_data(store_id, filters={}):
 					(SELECT listagg(pl.keyword, ', ') FROM product_labels AS pl WHERE prod.ppsid = pl.ppsid) AS "Labels",
 					prod.msrp, prod.competitors_count as "total competitors" 
 					FROM products as prod
-					WHERE prod.store_id = {0}"""
+					WHERE prod.deleted = 0 and prod.store_id = {0}"""
 	query = query.format(store_id)
 
 	if 'brands' in filters:
@@ -94,7 +94,7 @@ def get_competitor_data(store_id, filters={}, dedup=False):
 	query = """SELECT prod.sku, cs.id "csid", p.store_name AS "Comp", p.price AS "Comp Price", p.ship AS "Comp Shipping", p.url AS "Comp URL", mvs.image_url AS "Comp Violator Screenshot", prod.competitors_count AS "Total Competitors"
 				FROM products AS prod
 				JOIN stores as client_store on client_store.id = prod.store_id
-				LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name
+				LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
 				LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
 				LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
 				LEFT JOIN map_violators_screenshots AS mvs ON
