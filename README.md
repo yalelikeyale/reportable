@@ -108,7 +108,7 @@ columns = {
   'map_violators_screenshots': ['image_url']
 }
 filters = {'competitors': ['ezcontacts']}
-print generate_report.query_competitor_data(1178770744, columns=columns, filters=filters, screenshots=True).head()
+print gr.query_competitor_data(1178770744, columns=columns, filters=filters).head()
 ```
 
 
