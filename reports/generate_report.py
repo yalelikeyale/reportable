@@ -85,6 +85,59 @@ def get_custom_column_data(store_id):
 	custom_column_data.reset_index(drop=True)
 	return custom_column_data
 
+def get_select_statement(columns):
+	table_abr = { 
+		'products': 'prod',
+		'stores': 'client_store',
+		'client_store': 'client_store',
+		'comp_store': 'comp_store',
+		'compete_settings': 'cs',
+		'pricing': 'p',
+		'map_violators_screenshots': 'mvs',
+		'product_labels': 'pl',
+
+	}
+	print "Columns: %s" % columns
+	select_statement = ''
+	for table in columns:
+		print "Table: %s" % table
+		for column in columns[table]:
+			print "Current Column: %s" % column
+			if table == 'pps_custom_attributes':
+				heading = """, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as {0}""".format(column)
+			elif table == 'product_labels' and column == 'keyword':
+				heading = """, (SELECT listagg(pl.keyword, ', ') 
+										FROM product_labels AS pl 
+										WHERE prod.ppsid = pl.ppsid) AS labels"""
+			else:
+				heading = ", {0}.{1}".format(table_abr[table],column)
+			select_statement = select_statement + heading
+	return select_statement
+
+def get_screenshots_statement(columns, screenshots):
+	screenshots_statement = ''
+	if screenshots or 'map_violators_screenshots' in columns:
+		screenshots_statement = """LEFT JOIN map_violators_screenshots AS mvs ON
+				(mvs.ppsid = prod.ppsid AND mvs.date >= GETDATE() - INTERVAL '4 days') AND
+        ((mvs.site_name ilike prod.asin AND p.url LIKE '%amazon.com%') OR
+        (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
+	return screenshots_statement
+
+def query_competitor_data(store_id, columns={'products': ['sku']}, filters={}, screenshots=False, dedup=False):
+	query = """SELECT prod.sku, cs.id as csid {0}
+							FROM products AS prod
+							JOIN stores as client_store on client_store.id = prod.store_id
+							LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
+							LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
+							LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
+							{1}
+							WHERE prod.deleted = 0 AND prod.store_id = {2}"""
+	query = query.format(get_select_statement(columns), get_screenshots_statement(columns, screenshots), store_id)
+	print "Running User Query: %s" % query
+	data = pd.read_sql(query, db)
+	data = data[pd.isnull(data['csid'])]
+	return data
+
 # filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
 def get_competitor_data(store_id, filters={}, dedup=False):
 	'''Get competitor data in comp per row format based on
@@ -98,7 +151,7 @@ def get_competitor_data(store_id, filters={}, dedup=False):
 				LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
 				LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
 				LEFT JOIN map_violators_screenshots AS mvs ON
-        (mvs.ppsid = prod.ppsid AND mvs.date >= GETDATE() - INTERVAL '2 days') AND
+        (mvs.ppsid = prod.ppsid AND mvs.date >= GETDATE() - INTERVAL '4 days') AND
         ((mvs.site_name ilike prod.asin AND p.url LIKE '%amazon.com%')
               OR (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))
 				WHERE prod.deleted = 0 AND prod.store_id = {0}"""
