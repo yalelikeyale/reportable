@@ -94,6 +94,8 @@ gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'bran
 [filters optional]
 ```
 
+## Custom Querying
+
 **To Perform a Custom Query on the DB involving 'competitor data':**
 
 ```
