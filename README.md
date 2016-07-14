@@ -81,7 +81,7 @@ gr.top_competitor_report(STORE_ID)
 ```
 
 **Standard export example using filters:**
-```
+```py
 gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 ```
 
@@ -89,7 +89,7 @@ gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 `gr.get_custom_column_data(STORE_ID)`
 
 **To get the standard export in distinct row format:**
-```
+```py
 gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'brands': ["sony"]})
 [filters optional]
 ```
@@ -98,7 +98,7 @@ gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'bran
 
 **To Perform a Custom Query on the DB involving 'competitor data':**
 
-```
+```py
 from reports import generate_report as gr
 columns = {
   'products': ['sku', 'name'],
