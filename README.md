@@ -94,6 +94,20 @@ gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'bran
 [filters optional]
 ```
 
+**To Perform a Custom Query on the DB involving 'competitor data':**
+
+```
+from reports import generate_report as gr
+columns = {
+  'products': ['sku', 'name'],
+  'pricing': ['store_name', 'price', 'ship'],
+  'product_labels': ['keyword'],
+  'pps_custom_attributes': ['num_size'],
+  'map_violators_screenshots': ['image_url']
+}
+filters = {'competitors': ['ezcontacts']}
+print generate_report.query_competitor_data(1178770744, columns=columns, filters=filters, screenshots=True).head()
+```
 
 
 ## Hulk Stuff
