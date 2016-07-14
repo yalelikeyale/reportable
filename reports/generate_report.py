@@ -123,8 +123,8 @@ def get_screenshots_statement(columns, screenshots):
         (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
 	return screenshots_statement
 
-def query_competitor_data(store_id, columns={'products': ['sku']}, filters={}, screenshots=False, dedup=False):
-	query = """SELECT prod.sku, cs.id as csid {0}
+def query_competitor_data(store_id, columns={}, filters={}, screenshots=False, dedup=False):
+	query = """SELECT prod.sku, cs.id as csid{0}
 							FROM products AS prod
 							JOIN stores as client_store on client_store.id = prod.store_id
 							LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
@@ -133,6 +133,18 @@ def query_competitor_data(store_id, columns={'products': ['sku']}, filters={}, s
 							{1}
 							WHERE prod.deleted = 0 AND prod.store_id = {2}"""
 	query = query.format(get_select_statement(columns), get_screenshots_statement(columns, screenshots), store_id)
+	if 'brands' in filters:
+		brands = '|'.join(filters['brands'])
+		print 'brands: ', brands
+		query = query + " AND LOWER(prod.brand) SIMILAR TO LOWER('%({0})%')".format(brands)
+	if 'competitors' in filters:
+		competitors = '|'.join(filters['competitors'])
+		print 'comps: ', competitors
+		query = query + " AND LOWER(comp_store.store_name) SIMILAR TO LOWER('%({0})%')".format(competitors)
+	if 'comp_url' in filters:
+		comp_url = '|'.join(filters['comp_url'])
+		print 'comp_urls: ', comp_url
+		query = query + " AND LOWER(p.url) SIMILAR TO LOWER('%({0})%')".format(comp_url)
 	print "Running User Query: %s" % query
 	data = pd.read_sql(query, db)
 	data = data[pd.isnull(data['csid'])]
