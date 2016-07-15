@@ -99,19 +99,16 @@ def get_select_statement(columns):
 	}
 	print "Columns: %s" % columns
 	select_statement = ''
-	for table in columns:
-		print "Table: %s" % table
-		for column in columns[table]:
-			print "Current Column: %s" % column
-			if table == 'pps_custom_attributes':
-				heading = """, (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as {0}""".format(column)
-			elif table == 'product_labels' and column == 'keyword':
-				heading = """, (SELECT listagg(pl.keyword, ', ') 
-										FROM product_labels AS pl 
-										WHERE prod.ppsid = pl.ppsid) AS labels"""
-			else:
-				heading = ", {0}.{1}".format(table_abr[table],column)
-			select_statement = select_statement + heading
+	for column in columns:
+		if column['table'] == 'pps_custom_attributes':
+			heading = ''', (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as "{1}"'''.format(column['column'], column['name'])
+		elif column['table'] == 'product_labels' and column['column'] == 'keyword':
+			heading = ''', (SELECT listagg(pl.keyword, ', ') 
+									FROM product_labels AS pl 
+									WHERE prod.ppsid = pl.ppsid) AS "{0}"'''.format(column['name'])
+		else:
+			heading = ', {0}.{1} as "{2}"'.format(table_abr[column['table']],column['column'], column['name'])
+		select_statement = select_statement + heading
 	return select_statement
 
 def get_screenshots_statement(columns, screenshots):
@@ -123,7 +120,7 @@ def get_screenshots_statement(columns, screenshots):
         (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
 	return screenshots_statement
 
-def query_competitor_data(store_id, columns={}, filters={}, screenshots=False, dedup=False):
+def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, dedup=False):
 	query = """SELECT prod.sku, cs.id as csid{0}
 							FROM products AS prod
 							JOIN stores as client_store on client_store.id = prod.store_id

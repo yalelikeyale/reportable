@@ -100,13 +100,48 @@ gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'bran
 
 ```py
 from reports import generate_report as gr
-columns = {
-  'products': ['sku', 'name'],
-  'pricing': ['store_name', 'price', 'ship'],
-  'product_labels': ['keyword'],
-  'pps_custom_attributes': ['num_size'],
-  'map_violators_screenshots': ['image_url']
-}
+columns = [
+  {
+    'table':'products',
+    'column':'name',
+    'name':'product name'
+  },
+  {
+    'table':'pricing',
+    'column':'store_name',
+    'name':'comp name'
+  },
+  {
+    'table':'products',
+    'column':'sku',
+    'name':'sku num'
+  },
+  {
+    'table':'pricing',
+    'column':'price',
+    'name':'comp price'
+  },
+  {
+    'table':'pricing',
+    'column':'ship',
+    'name':'comp shipping'
+  },
+  {
+    'table':'product_labels',
+    'column':'keyword',
+    'name':'labelers'
+  },
+  {
+    'table':'pps_custom_attributes',
+    'column':'num_size',
+    'name':'product size'
+  },
+  {
+    'table':'map_violators_screenshots',
+    'column':'image_url',
+    'name':'screenshot'
+  }
+]
 filters = {'competitors': ['ezcontacts']}
 print gr.query_competitor_data(1178770744, columns=columns, filters=filters).head()
 ```
