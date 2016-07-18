@@ -61,7 +61,7 @@ def ftp_drop(host, port, user, pwrd, path, filename):
 	print "file is:",filename
 	ftp.cwd(path+"/")
 	print "cwd successfull"
-	ftp.storbinary('STOR '+filename, open(filename, 'rb'))
+	ftp.storlines('STOR '+filename, open(filename, 'rb'))
 	print time.strftime("%c"), "ftp drop: ", filename
 
 # grab file from remote sftp
