@@ -81,7 +81,7 @@ gr.top_competitor_report(STORE_ID)
 ```
 
 **Standard export example using filters:**
-```
+```py
 gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 ```
 
@@ -89,11 +89,62 @@ gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 `gr.get_custom_column_data(STORE_ID)`
 
 **To get the standard export in distinct row format:**
-```
+```py
 gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'brands': ["sony"]})
 [filters optional]
 ```
 
+## Custom Querying
+
+**To Perform a Custom Query on the DB involving 'competitor data':**
+
+```py
+from reports import generate_report as gr
+columns = [
+  {
+    'table':'products',
+    'column':'name',
+    'name':'product name'
+  },
+  {
+    'table':'pricing',
+    'column':'store_name',
+    'name':'comp name'
+  },
+  {
+    'table':'products',
+    'column':'sku',
+    'name':'sku num'
+  },
+  {
+    'table':'pricing',
+    'column':'price',
+    'name':'comp price'
+  },
+  {
+    'table':'pricing',
+    'column':'ship',
+    'name':'comp shipping'
+  },
+  {
+    'table':'product_labels',
+    'column':'keyword',
+    'name':'labelers'
+  },
+  {
+    'table':'pps_custom_attributes',
+    'column':'num_size',
+    'name':'product size'
+  },
+  {
+    'table':'map_violators_screenshots',
+    'column':'image_url',
+    'name':'screenshot'
+  }
+]
+filters = {'competitors': ['ezcontacts']}
+print gr.query_competitor_data(1178770744, columns=columns, filters=filters).head()
+```
 
 
 ## Hulk Stuff
