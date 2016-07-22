@@ -299,7 +299,7 @@ def top_competitor_format(store_id, filters={}, screenshots=False, dedup=False):
 # gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
 # gr.top_competitor_report(1178770744).to_csv("topcompTESTing.csv")
 # gr.top_competitor_report(1189273733).to_csv("bctestMSRP.csv")
-def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False):
+def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False, format_headers=False):
 	product_data = get_product_data(store_id, filters).drop(["ppsid", "product_id"], axis=1)
 	if custom_columns:
 		custom_cols = get_custom_column_data(store_id)
@@ -315,15 +315,22 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 	compcols = comp_data.columns.values.tolist()
 	finalresult = pd.merge(prods, comp_data, how='outer', on='inventory number')
 	cols = finalresult.columns.values.tolist()[0:prod_column_count]
-	f = lambda x: x.title()
+	f = lambda x: x if "num_" in x or "str_" in x else x.title()
 	newcols = list(map(f, cols))
 	finalcols = newcols + compcols[0:-1]
 	finalresult.columns = finalcols
-
-	# prods.to_csv("prods.csv")
-	# comp_data.to_csv("comp_data.csv")
-	# TODO:
-	# FIX THIS BULLSHIT ABOVE
+	print "final columns comming up"
+	print finalcols
+	if format_headers:
+		print finalcols
+		finalresult.rename(columns={
+			'Upc/Ean': 'UPC/EAN',
+			'Asin': 'ASIN',
+			'Mpn': 'MPN',
+			'Msrp': 'MSRP',
+			'In Stock': 'IN STOCK'
+		}, inplace=True)
+		print finalcols
 
 	totcomps = finalresult['Total Competitors']
 	finalresult.drop(labels=['Total Competitors'], axis=1,inplace=True)
