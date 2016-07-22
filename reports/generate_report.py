@@ -319,10 +319,7 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 	newcols = list(map(f, cols))
 	finalcols = newcols + compcols[0:-1]
 	finalresult.columns = finalcols
-	print "final columns comming up"
-	print finalcols
 	if format_headers:
-		print finalcols
 		finalresult.rename(columns={
 			'Upc/Ean': 'UPC/EAN',
 			'Asin': 'ASIN',
@@ -330,13 +327,13 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 			'Msrp': 'MSRP',
 			'In Stock': 'IN STOCK'
 		}, inplace=True)
-		print finalcols
 
 	totcomps = finalresult['Total Competitors']
 	finalresult.drop(labels=['Total Competitors'], axis=1,inplace=True)
 	finalresult['Total Competitors'] = totcomps
 	print time.strftime("%c"), "merged"
 	print "shape of merge:", finalresult.shape
+	print "final columns: %s" % finalresult.columns.values.tolist()
 	return finalresult
 
 def distinct_row_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False):
