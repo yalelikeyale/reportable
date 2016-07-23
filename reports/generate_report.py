@@ -325,7 +325,9 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 			'Asin': 'ASIN',
 			'Mpn': 'MPN',
 			'Msrp': 'MSRP',
-			'In Stock': 'IN STOCK'
+			'In Stock': 'IN STOCK',
+			'Product Url': 'Product URL',
+			'Image Url': 'Image URL'
 		}, inplace=True)
 
 	totcomps = finalresult['Total Competitors']
