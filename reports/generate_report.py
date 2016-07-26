@@ -120,7 +120,15 @@ def get_screenshots_statement(columns, screenshots):
         (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
 	return screenshots_statement
 
-def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, dedup=False):
+def format_headers(data, columns):
+	column_names = {}
+	for column in columns:
+		column_names[column["name"].lower()] = column["name"]
+	print column_names
+	data.rename(columns=column_names, inplace=True)
+	return data
+
+def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, violations_only=False, dedup=False):
 	query = """SELECT prod.sku, cs.id as csid{0}
 							FROM products AS prod
 							JOIN stores as client_store on client_store.id = prod.store_id
@@ -142,9 +150,12 @@ def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, d
 		comp_url = '|'.join(filters['comp_url'])
 		print 'comp_urls: ', comp_url
 		query = query + " AND LOWER(p.url) SIMILAR TO LOWER('%({0})%')".format(comp_url)
+	if violations_only:
+		query = query + " AND prod.store_price > p.price"
 	print "Running User Query: %s" % query
 	data = pd.read_sql(query, db)
 	data = data[pd.isnull(data['csid'])]
+	data = format_headers(data, columns)
 	return data
 
 # filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
