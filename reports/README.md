@@ -3,7 +3,7 @@
 
 ###  Settings
 
-report_settings.py has different functions to grab current report settings based on store_id and user_id
+report_settings.py has different functions to grab current report settings based on store_id and/or user_id
 
 Usage:
 ```py
@@ -13,6 +13,22 @@ custom_columns = report_settings.get_custom_columns(STORE_ID)
 Expects: wiser_store_id
 
 Returns: List of custom column names
+
+===
+
+`get_user(store_id)`
+
+Returns: user_id associated with given store_id
+
+===
+
+`check_ftp_user(uid)`
+
+Expects: wiser user id
+
+Returns: True if ftp user exists, else False
+
+===
 
 ### Fun URL
 
@@ -34,15 +50,15 @@ simple_ftp.py has functions for different tasks using ftp/sftp/ftps (supports ke
 
 `sftp_grab(host, port, user, pwrd, path, search_keyword)`
 
-returns list of filenames found and transfers matching remote files to local dir
+**returns list of filenames found and transfers matching remote files to local dir**
 
 `ftp_drop(host, port, user, pwrd, path, filename)`
 
 `sftp_drop(host, port, user, pwrd, path, filename)`
 
-returns nothing but sends local file to remote path
+**returns nothing but sends local file to remote path**
 
-Both grab functions use unix search to transfer all matching remote files to local dir and returns
+*Both grab functions use unix search to transfer all matching remote files to local dir and returns*
 
 see: http://www.codecoffee.com/tipsforlinux/articles/26-1.html for help with search_keyword
 
@@ -50,6 +66,7 @@ see: http://www.codecoffee.com/tipsforlinux/articles/26-1.html for help with sea
 ###  Email
 
 send_email.py lets you send emails with attachments (based on smtplib and mimetypes)
+
 `send_email(email_subject, filename_list, email_list, bcc_list=[])`
 
 Params:
@@ -99,7 +116,7 @@ se.send_email("WiseReport - MAP Policy Updated Violators", file_list, email_list
 `get_competitor_data(store_id, filters={}, dedup=False)`
 
 Usage:
-```
+```py
 from reports import generate_report as gr
 filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
 gr.get_competitor_data(12345, filters)
@@ -111,7 +128,7 @@ gr.get_competitor_data(12345, filters)
 `top_competitor_format(store_id, filters={}, screenshots=False, dedup=False)`
 
 Usage:
-```
+```py
 from reports import generate_report as gr
 gr.top_competitor_format(12345, screenshots=True)
 ```
@@ -123,7 +140,7 @@ gr.top_competitor_format(12345, screenshots=True)
 `top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False, format_headers=False)`
 
 Usage:
-```
+```py
 from reports import generate_report as gr
 gr.top_competitor_report(12345, screenshots=True, format_headers=True)
 ```
