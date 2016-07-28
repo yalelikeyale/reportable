@@ -76,8 +76,6 @@ se.send_email("WiseReport - MAP Policy Updated Violators", file_list, email_list
 
 ## Generating Reports
 
-generate_report.py lets you create report templates with different strategies (may need massaging)
-
 **Return store settings for competitor reports**
 
 `get_comp_settings(store_id)`
@@ -100,11 +98,23 @@ generate_report.py lets you create report templates with different strategies (m
 
 `get_competitor_data(store_id, filters={}, dedup=False)`
 
+Usage:
+```
+from reports import generate_report as gr
+filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
+gr.get_competitor_data(12345, filters)
+```
 ===
 
 **Return dataframe of competitor data in top competitor format**
 
 `top_competitor_format(store_id, filters={}, screenshots=False, dedup=False)`
+
+Usage:
+```
+from reports import generate_report as gr
+gr.top_competitor_format(12345, screenshots=True)
+```
 
 ===
 
@@ -112,5 +122,69 @@ generate_report.py lets you create report templates with different strategies (m
 
 `top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False, format_headers=False)`
 
+Usage:
+```
+from reports import generate_report as gr
+gr.top_competitor_report(12345, screenshots=True, format_headers=True)
+```
+* format_headers = True will give you headers just like the legacy report
+
 ===
 
+**Return dataframe of the legacy report in distinct rows**
+
+`distinct_row_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False)`
+
+===
+
+## Custom Querying
+
+**To Perform a Custom Query on the DB involving 'competitor data':**
+
+```py
+from reports import generate_report as gr
+columns = [
+  {
+    'table':'products',
+    'column':'name',
+    'name':'product name'
+  },
+  {
+    'table':'pricing',
+    'column':'store_name',
+    'name':'comp name'
+  },
+  {
+    'table':'products',
+    'column':'sku',
+    'name':'sku num'
+  },
+  {
+    'table':'pricing',
+    'column':'price',
+    'name':'comp price'
+  },
+  {
+    'table':'pricing',
+    'column':'ship',
+    'name':'comp shipping'
+  },
+  {
+    'table':'product_labels',
+    'column':'keyword',
+    'name':'labelers'
+  },
+  {
+    'table':'pps_custom_attributes',
+    'column':'num_size',
+    'name':'product size'
+  },
+  {
+    'table':'map_violators_screenshots',
+    'column':'image_url',
+    'name':'screenshot'
+  }
+]
+filters = {'competitors': ['ezcontacts']}
+print gr.query_competitor_data(1178770744, columns=columns, filters=filters).head()
+```
