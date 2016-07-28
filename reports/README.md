@@ -1,7 +1,7 @@
 
-## Reports
+# Reports
 
-####  Settings
+###  Settings
 
 report_settings.py has different functions to grab current report settings based on store_id and user_id
 
@@ -14,7 +14,7 @@ Expects: wiser_store_id
 
 Returns: List of custom column names
 
-#### Fun URL
+### Fun URL
 
 fun_url.py will help you clean up those long and ugly urls
 
@@ -26,7 +26,7 @@ Usage:
 
 `fun_url.clean_url(URL)` will call split_url, then if the url is >255 characters it will call shorten_url
 
-####  Simple FTP
+###  Simple FTP
 
 simple_ftp.py has functions for different tasks using ftp/sftp/ftps (supports key based auth with paramiko)
 
@@ -47,7 +47,7 @@ Both grab functions use unix search to transfer all matching remote files to loc
 see: http://www.codecoffee.com/tipsforlinux/articles/26-1.html for help with search_keyword
 
 
-####  Email
+###  Email
 
 send_email.py lets you send emails with attachments (based on smtplib and mimetypes)
 `send_email(email_subject, filename_list, email_list, bcc_list=[])`
@@ -81,30 +81,36 @@ generate_report.py lets you create report templates with different strategies (m
 **Return store settings for competitor reports**
 
 `get_comp_settings(store_id)`
+
 ===
 
 **Return dataframe of raw product data in standard format**
 
 `get_product_data(store_id, filters={})`
+
 ===
 
 **Return dataframe of all custom columns**
 
 `get_custom_column_data(store_id)`
+
 ===
 
 **Return dataframe of competitor data in standard row format**
 
 `get_competitor_data(store_id, filters={}, dedup=False)`
+
 ===
 
 **Return dataframe of competitor data in top competitor format**
 
 `top_competitor_format(store_id, filters={}, screenshots=False, dedup=False)`
+
 ===
 
 **Return dataframe of the standard legacy report in top comp format**
 
 `top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False, format_headers=False)`
+
 ===
 
