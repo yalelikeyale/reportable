@@ -109,7 +109,7 @@ def get_select_statement(columns):
           where {0}.ppsid = prod.ppsid
           order by {0}.id desc
           limit 1)
-					ELSE '' END""".format(table_abr[column['table']],column['column'])
+					ELSE '' END as \"{2}\"""".format(table_abr[column['table']],column['column'], column['name'])
 		elif column['table'] == 'product_labels' and column['column'] == 'keyword':
 			heading = ''', (SELECT listagg(pl.keyword, ', ') 
 									FROM product_labels AS pl 
