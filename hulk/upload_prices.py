@@ -44,9 +44,12 @@ def run_hulk_command(store_id, comp_id):
   client.close()
 
 def upload_prices(filename, store_id, comp_id):
+  print filename
   ogfilename = filename.replace(" ", "\\ ")
+  print ogfilename
   filename = "comp_{0}_{1}.csv".format(store_id, comp_id)
-  os.rename(ogfilename, filename)
+  print filename
+  os.renames(ogfilename, filename)
   user_id = rs.get_user(store_id)
   drop_path = ftp_creds['path'] % user_id + 'Upload'
 

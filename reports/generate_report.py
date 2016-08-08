@@ -102,6 +102,14 @@ def get_select_statement(columns):
 	for column in columns:
 		if column['table'] == 'pps_custom_attributes':
 			heading = ''', (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as "{1}"'''.format(column['column'], column['name'])
+		elif column['table'] == 'map_violators_screenshots':
+			heading = """, CASE WHEN p.price < prod.store_price THEN
+					(select {0}.{1}
+          from map_violators_screenshots {0}
+          where {0}.ppsid = prod.ppsid
+          order by {0}.id desc
+          limit 1)
+					ELSE '' END""".format(table_abr[column['table']],column['column'])
 		elif column['table'] == 'product_labels' and column['column'] == 'keyword':
 			heading = ''', (SELECT listagg(pl.keyword, ', ') 
 									FROM product_labels AS pl 
@@ -135,9 +143,8 @@ def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, v
 							LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
 							LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
 							LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
-							{1}
-							WHERE prod.deleted = 0 AND prod.store_id = {2}"""
-	query = query.format(get_select_statement(columns), get_screenshots_statement(columns, screenshots), store_id)
+							WHERE prod.deleted = 0 AND prod.store_id = {1}"""
+	query = query.format(get_select_statement(columns), store_id)
 	if 'brands' in filters:
 		brands = '|'.join(filters['brands'])
 		print 'brands: ', brands
