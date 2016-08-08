@@ -102,6 +102,14 @@ def get_select_statement(columns):
 	for column in columns:
 		if column['table'] == 'pps_custom_attributes':
 			heading = ''', (select att_value from pps_custom_attributes as pca where pca.ppsid = prod.ppsid and pca.att_name = '{0}') as "{1}"'''.format(column['column'], column['name'])
+		elif column['table'] == 'map_violators_screenshots':
+			heading = """, CASE WHEN p.price < prod.store_price THEN
+					(select {0}.{1}
+          from map_violators_screenshots {0}
+          where {0}.ppsid = prod.ppsid
+          order by {0}.id desc
+          limit 1)
+					ELSE '' END""".format(table_abr[column['table']],column['column'])
 		elif column['table'] == 'product_labels' and column['column'] == 'keyword':
 			heading = ''', (SELECT listagg(pl.keyword, ', ') 
 									FROM product_labels AS pl 
@@ -120,16 +128,23 @@ def get_screenshots_statement(columns, screenshots):
         (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
 	return screenshots_statement
 
-def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, dedup=False):
+def format_headers(data, columns):
+	column_names = {}
+	for column in columns:
+		column_names[column["name"].lower()] = column["name"]
+	print column_names
+	data.rename(columns=column_names, inplace=True)
+	return data
+
+def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, violations_only=False, dedup=False):
 	query = """SELECT prod.sku, cs.id as csid{0}
 							FROM products AS prod
 							JOIN stores as client_store on client_store.id = prod.store_id
 							LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
 							LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
 							LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
-							{1}
-							WHERE prod.deleted = 0 AND prod.store_id = {2}"""
-	query = query.format(get_select_statement(columns), get_screenshots_statement(columns, screenshots), store_id)
+							WHERE prod.deleted = 0 AND prod.store_id = {1}"""
+	query = query.format(get_select_statement(columns), store_id)
 	if 'brands' in filters:
 		brands = '|'.join(filters['brands'])
 		print 'brands: ', brands
@@ -142,9 +157,12 @@ def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, d
 		comp_url = '|'.join(filters['comp_url'])
 		print 'comp_urls: ', comp_url
 		query = query + " AND LOWER(p.url) SIMILAR TO LOWER('%({0})%')".format(comp_url)
+	if violations_only:
+		query = query + " AND prod.store_price > p.price"
 	print "Running User Query: %s" % query
 	data = pd.read_sql(query, db)
 	data = data[pd.isnull(data['csid'])]
+	data = format_headers(data, columns)
 	return data
 
 # filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
@@ -325,7 +343,9 @@ def top_competitor_report(store_id, filters={}, custom_columns=True, screenshots
 			'Asin': 'ASIN',
 			'Mpn': 'MPN',
 			'Msrp': 'MSRP',
-			'In Stock': 'IN STOCK'
+			'In Stock': 'IN STOCK',
+			'Product Url': 'Product URL',
+			'Image Url': 'Image URL'
 		}, inplace=True)
 
 	totcomps = finalresult['Total Competitors']
