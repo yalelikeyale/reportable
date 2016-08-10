@@ -23,6 +23,12 @@ keypath =hulk_creds['key']
 
 
 def run_hulk_command(store_id, comp_id):
+  print h_user
+  print h_pass
+  print h_port
+  print h_host
+  print h_path
+  print keypath
   my_agentkey = paramiko.RSAKey.from_private_key_file(keypath, password=h_pass)
   client = paramiko.SSHClient()
   client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -43,24 +49,25 @@ def run_hulk_command(store_id, comp_id):
   print stdout.channel.recv(1024)
   client.close()
 
-def upload_prices(filename, store_id, comp_id):
-  print filename
-  ogfilename = filename.replace(" ", "\\ ")
-  print ogfilename
-  filename = "comp_{0}_{1}.csv".format(store_id, comp_id)
-  print filename
-  os.renames(ogfilename, filename)
+def upload_prices(file_path, store_id, comp_id):
+  path = '/'.join(file_path.replace(" ", "\\ ").split('/')[0:-1])
+  ogfilename = file_path.replace(" ", "\\ ").split('/')[-1]
+  filename = path+"comp_{0}_{1}.csv".format(store_id, comp_id)
+  print "Uploading {0} to store {1}".format(filename, store_id)
+  os.renames(file_path, filename)
   user_id = rs.get_user(store_id)
-  drop_path = ftp_creds['path'] % user_id + 'Upload'
-
-  sf.ftp_drop(
-    ftp_creds['host'],
-    ftp_creds['port'],
-    ftp_creds['username'],
-    ftp_creds['password'],
-    drop_path,
-    filename
-  )
+  drop_path = (ftp_creds['path'] % ('User%s' % user_id)) + 'Upload'
+  if rs.check_ftp_user(user_id):
+    sf.ftp_drop(
+      ftp_creds['host'],
+      ftp_creds['port'],
+      ftp_creds['username'],
+      ftp_creds['password'],
+      drop_path,
+      filename
+    )
+  else:
+    print 'Error dingus! - This user does not have an ftp'
 
   run_hulk_command(store_id, comp_id)
 
