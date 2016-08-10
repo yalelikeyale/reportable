@@ -19,11 +19,12 @@ Getting Started
 
     
 
-## Reports
 
-####  Settings
+# Reports
 
-report_settings.py has different functions to grab current report settings based on store_id and user_id
+###  Settings
+
+report_settings.py has different functions to grab current report settings based on store_id and/or user_id
 
 Usage:
 ```py
@@ -34,7 +35,23 @@ Expects: wiser_store_id
 
 Returns: List of custom column names
 
-#### Fun URL
+===
+
+`get_user(store_id)`
+
+Returns: user_id associated with given store_id
+
+===
+
+`check_ftp_user(uid)`
+
+Expects: wiser user id
+
+Returns: True if ftp user exists, else False
+
+===
+
+### Fun URL
 
 fun_url.py will help you clean up those long and ugly urls
 
@@ -46,53 +63,117 @@ Usage:
 
 `fun_url.clean_url(URL)` will call split_url, then if the url is >255 characters it will call shorten_url
 
-####  Simple FTP
+###  Simple FTP
 
 simple_ftp.py has functions for different tasks using ftp/sftp/ftps (supports key based auth with paramiko)
 
-####  Email
+`ftp_grab(host, port, user, pwrd, path, search_keyword)`
 
-send_email.py lets you send emails with attatchments (based on smtplib and mimetypes)
+`sftp_grab(host, port, user, pwrd, path, search_keyword)`
 
-###  Generating Reports
+**returns list of filenames found and transfers matching remote files to local dir**
 
-generate_report.py lets you create report templates with different strategies (may need massaging)
+`ftp_drop(host, port, user, pwrd, path, filename)`
+
+`sftp_drop(host, port, user, pwrd, path, filename)`
+
+**returns nothing but sends local file to remote path**
+
+*Both grab functions use unix search to transfer all matching remote files to local dir and returns*
+
+see: http://www.codecoffee.com/tipsforlinux/articles/26-1.html for help with search_keyword
+
+
+###  Email
+
+send_email.py lets you send emails with attachments (based on smtplib and mimetypes)
+
+`send_email(email_subject, filename_list, email_list, bcc_list=[])`
+
+Params:
+```
+email_subject: string - email subject line
+
+filename_list: list of strings - files to be attached
+
+email_list: lsit of strings - email addresses in recipient list
+
+bcc_list: list of strings - email addresses hidden from recipient list
+```
+
+Returns: nothing
 
 **Usage:**
+```py
+from reports import send_email as se
+email_list = ['client1@client.com', 'client2@client.com']
+bcc_list = ['adam.david@wiser.com', 'thumarut.vareechon@wiser.com', 'tenzin.wangdhen@wiser.com']
+file_list = ['MAP_report1.csv', 'MAP_report2.csv']
+se.send_email("WiseReport - MAP Policy Updated Violators", file_list, email_list, bcc_list)
+```
 
-**To get the competitors in the standard top competitor format:**
+## Generating Reports
+
+**Return store settings for competitor reports**
+
+`get_comp_settings(store_id)`
+
+===
+
+**Return dataframe of raw product data in standard format**
+
+`get_product_data(store_id, filters={})`
+
+===
+
+**Return dataframe of all custom columns**
+
+`get_custom_column_data(store_id)`
+
+===
+
+**Return dataframe of competitor data in standard row format**
+
+`get_competitor_data(store_id, filters={}, dedup=False)`
+
+Usage:
 ```py
 from reports import generate_report as gr
-filtered_comp_data = gr.get_competitor_data(1446251, filters={'competitors': ["staples.com", "office"], 'brands': ["zep"]})
+filters={'brands': ["dwalt"], 'competitors': ["staples.com"]}
+gr.get_competitor_data(12345, filters)
 ```
-Expects: store_id (int or intable string), optional inputs include: filters (dict)
+===
 
-Returns: DataFrame (pandas) with sku and competitors in top comp format
+**Return dataframe of competitor data in top competitor format**
 
-Side-effect: Prints settings used to cli
+`top_competitor_format(store_id, filters={}, screenshots=False, dedup=False)`
 
-**To get the product data in standard format based on store settings:**
-`gr.get_product_data(STORE_ID, filters={'brands': ["kirk"]})`
-[filters optional]
-
-**To obtain the standard export in top competitor format use:**
-```
-gr.top_competitor_report(STORE_ID)
-```
-
-**Standard export example using filters:**
+Usage:
 ```py
-gr.top_competitor_report(1446251, filters={'competitors': ['staples.com']})
+from reports import generate_report as gr
+gr.top_competitor_format(12345, screenshots=True)
 ```
 
-**To get just the custom column data for a store:**
-`gr.get_custom_column_data(STORE_ID)`
+===
 
-**To get the standard export in distinct row format:**
+**Return dataframe of the standard legacy report in top comp format**
+
+`top_competitor_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False, format_headers=False)`
+
+Usage:
 ```py
-gr.distinct_row_report(STORE_ID, filters={'competitors': ['michaels.com'], 'brands': ["sony"]})
-[filters optional]
+from reports import generate_report as gr
+gr.top_competitor_report(12345, screenshots=True, format_headers=True)
 ```
+* format_headers = True will give you headers just like the legacy report
+
+===
+
+**Return dataframe of the legacy report in distinct rows**
+
+`distinct_row_report(store_id, filters={}, custom_columns=True, screenshots=False, dedup=False)`
+
+===
 
 ## Custom Querying
 
@@ -146,10 +227,21 @@ filters = {'competitors': ['ezcontacts']}
 print gr.query_competitor_data(1178770744, columns=columns, filters=filters).head()
 ```
 
-
 ## Hulk Stuff
 
-Run automated tasks on hulk via python scripts
+*Run automated tasks on hulk via python scripts*
+
+#### Uploading competitor prices (also used for custom repricing rules)
+
+`upload_prices(file_path, store_id, comp_id)`
+
+Usage:
+
+```py
+from hulk import upload_prices as up
+
+up.upload_prices('files/upload_prices_test_file.csv', 1196234460, 1197010905)
+```
 
 #### SSH
 

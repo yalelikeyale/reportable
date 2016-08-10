@@ -85,6 +85,11 @@ def get_custom_column_data(store_id):
 	custom_column_data.reset_index(drop=True)
 	return custom_column_data
 
+def get_store_sales_data(store_id):
+	sales_query = 'select * from sales_and_hits sh where sh.store_id = {0}'
+	sales_data = pd.read_sql(sales_query.format(store_id), db)
+	return sales_data
+
 def get_select_statement(columns):
 	table_abr = { 
 		'products': 'prod',
@@ -95,7 +100,7 @@ def get_select_statement(columns):
 		'pricing': 'p',
 		'map_violators_screenshots': 'mvs',
 		'product_labels': 'pl',
-
+		'user_rules': 'ur'
 	}
 	print "Columns: %s" % columns
 	select_statement = ''
@@ -109,7 +114,7 @@ def get_select_statement(columns):
           where {0}.ppsid = prod.ppsid
           order by {0}.id desc
           limit 1)
-					ELSE '' END""".format(table_abr[column['table']],column['column'])
+					ELSE '' END as \"{2}\"""".format(table_abr[column['table']],column['column'], column['name'])
 		elif column['table'] == 'product_labels' and column['column'] == 'keyword':
 			heading = ''', (SELECT listagg(pl.keyword, ', ') 
 									FROM product_labels AS pl 
@@ -118,15 +123,6 @@ def get_select_statement(columns):
 			heading = ', {0}.{1} as "{2}"'.format(table_abr[column['table']],column['column'], column['name'])
 		select_statement = select_statement + heading
 	return select_statement
-
-def get_screenshots_statement(columns, screenshots):
-	screenshots_statement = ''
-	if screenshots or 'map_violators_screenshots' in columns:
-		screenshots_statement = """LEFT JOIN map_violators_screenshots AS mvs ON
-				(mvs.ppsid = prod.ppsid AND mvs.date >= GETDATE() - INTERVAL '4 days') AND
-        ((mvs.site_name ilike prod.asin AND p.url LIKE '%amazon.com%') OR
-        (p.url NOT LIKE '%amazon.com%' AND mvs.site_name like '%'+prod.upc))"""
-	return screenshots_statement
 
 def format_headers(data, columns):
 	column_names = {}
@@ -143,6 +139,7 @@ def query_competitor_data(store_id, columns=[], filters={}, screenshots=False, v
 							LEFT JOIN pricing AS p ON p.ppsid = prod.ppsid AND p.approved = 1 AND p.store_name <> client_store.store_name and prod.product_id = p.product_id
 							LEFT JOIN compete_settings AS cs ON prod.store_id = cs.store_id AND p.store_id = cs.compete_id
 							LEFT JOIN stores as comp_store on comp_store.id = p.store_id AND client_store.store_url <> comp_store.store_url
+							LEFT JOIN user_rules as ur on prod.store_id = ur.store_id AND prod.rule_id = ur.id
 							WHERE prod.deleted = 0 AND prod.store_id = {1}"""
 	query = query.format(get_select_statement(columns), store_id)
 	if 'brands' in filters:
